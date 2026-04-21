@@ -300,8 +300,9 @@ export function ObsListScreen({ scrapOnly = false }: { scrapOnly?: boolean }) {
             <Image
               alt="스크랩 보기"
               height={29}
-              src={scrapOnly ? "/icons/Tagstar-active.svg" : "/icons/tagstar.svg"}
+              src={scrapOnly ? "/icons/Tagstar-active.svg" : "/icons/Tagstar.svg"}
               width={67}
+              priority
             />
           </button>
         </div>

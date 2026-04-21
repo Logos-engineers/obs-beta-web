@@ -68,6 +68,10 @@ export function ReviewEssayScreen({
         if (!active) return;
         setContent(contentData);
         setQuizzes(quizData);
+
+        if (quizData.length < 3 && !quizData.find(q => q.stepNumber === 3 || q.questionType === "ESSAY" || q.questionType === "OPEN_ENDED")) {
+          setError("3번째 퀴즈(서술형)를 찾을 수 없습니다. 데이터 생성이 지연되고 있거나 누락되었을 수 있습니다.");
+        }
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : "복습 정보를 불러오지 못했습니다.");
@@ -83,9 +87,8 @@ export function ReviewEssayScreen({
   const currentQuiz = useMemo(
     () =>
       quizzes.find((quiz) => quiz.stepNumber === 3) ??
-      quizzes.find((quiz) => quiz.questionType === "ESSAY") ??
-      quizzes[2] ??
-      null,
+      quizzes.find((quiz) => quiz.questionType === "ESSAY" || quiz.questionType === "OPEN_ENDED") ??
+      (quizzes.length >= 3 ? quizzes[2] : null),
     [quizzes],
   );
 

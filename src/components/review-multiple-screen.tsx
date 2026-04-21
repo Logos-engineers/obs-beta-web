@@ -242,7 +242,7 @@ export function ReviewMultipleScreen({ contentId, q1 }: { contentId: number | nu
                     onClick={() => router.replace(`/review/essay?id=${content.id}${q1 ? `&q1=${q1}` : ""}&q2=o`)}
                     type="button"
                   >
-                    복습 완료하기
+                    다음 퀴즈 풀기
                   </button>
                 </div>
               </>
