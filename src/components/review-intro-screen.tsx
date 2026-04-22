@@ -59,10 +59,10 @@ export function ReviewIntroScreen({
   }, [content]);
 
   return (
-    <main className="review-intro-screen">
+    <main className="review-intro-screen" style={{ paddingBottom: '140px' }}>
       <div className="review-intro-bg" />
 
-      <div className="review-nav">
+      <div className="review-nav" style={{ paddingLeft: 0, paddingRight: 0 }}>
         <button
           className="review-back-btn"
           onClick={() => router.back()}
@@ -72,45 +72,47 @@ export function ReviewIntroScreen({
         </button>
       </div>
 
-      <div className="review-intro-content">
-        <div className="review-intro-title-wrapper">
-          <p className="review-intro-title-badge">{getWeekOfMonth(date)}</p>
-          <h1 className="review-intro-title-main">{resolvedTitle}</h1>
-          <p className="review-intro-title-sub">{resolvedVerse}</p>
-        </div>
+      <div className="review-intro-content" style={{ padding: 0 }}>
+        <div className="review-content-wrapper">
+          <div className="review-intro-title-wrapper">
+            <p className="review-intro-title-badge">{getWeekOfMonth(date)}</p>
+            <h1 className="review-intro-title-main">{resolvedTitle}</h1>
+            <p className="review-intro-title-sub">{resolvedVerse}</p>
+          </div>
 
-        {loading ? (
-          <div className="review-intro-summary-card">
-            <p className="review-intro-summary-label">지난주 말씀 핵심</p>
-            <ul className="review-intro-summary-list">
-              {[1, 2, 3].map((i) => (
-                <li key={i} className="review-intro-summary-item">
-                  <span className="review-intro-summary-num">{i}</span>
-                  <div className="review-intro-summary-text" style={{ flex: 1 }}>
-                    <div className="review-skeleton review-skeleton-text" style={{ marginBottom: '8px' }} />
-                    <div className="review-skeleton review-skeleton-text-half" />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : points.length > 0 ? (
-          <div className="review-intro-summary-card">
-            <p className="review-intro-summary-label">지난주 말씀 핵심</p>
-            <ul className="review-intro-summary-list">
-              {points.map((point, i) => (
-                <li key={i} className="review-intro-summary-item">
-                  <span className="review-intro-summary-num">{i + 1}</span>
-                  <span className="review-intro-summary-text">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <div className="review-intro-illustration-wrapper">
-            <Image alt="책 일러스트" height={133} src="/icons/bigbook.svg" width={160} />
-          </div>
-        )}
+          {loading ? (
+            <div className="review-intro-summary-card">
+              <p className="review-intro-summary-label">지난주 말씀 핵심</p>
+              <ul className="review-intro-summary-list">
+                {[1, 2, 3].map((i) => (
+                  <li key={i} className="review-intro-summary-item">
+                    <span className="review-intro-summary-num">{i}</span>
+                    <div className="review-intro-summary-text" style={{ flex: 1 }}>
+                      <div className="review-skeleton review-skeleton-text" style={{ marginBottom: '8px' }} />
+                      <div className="review-skeleton review-skeleton-text-half" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : points.length > 0 ? (
+            <div className="review-intro-summary-card">
+              <p className="review-intro-summary-label">지난주 말씀 핵심</p>
+              <ul className="review-intro-summary-list">
+                {points.map((point, i) => (
+                  <li key={i} className="review-intro-summary-item">
+                    <span className="review-intro-summary-num">{i + 1}</span>
+                    <span className="review-intro-summary-text">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="review-intro-illustration-wrapper">
+              <Image alt="책 일러스트" height={133} src="/icons/bigbook.svg" width={160} />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="review-fixed-cta">

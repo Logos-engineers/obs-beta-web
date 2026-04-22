@@ -153,10 +153,12 @@ export function ReviewEssayScreen({
                   {currentQuiz.correctAnswer ?? "정답이 아직 등록되지 않았습니다."}
                 </p>
                 {showAnswer && currentQuiz.explanation && (
-                  <p className="review-essay-explanation-text" style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid var(--border-subtle)", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.6" }}>
-                    <strong style={{ display: "block", marginBottom: "4px", color: "var(--text-primary)" }}>도움말/해설</strong>
-                    {currentQuiz.explanation}
-                  </p>
+                  <div className="review-essay-explanation-text" style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--border-subtle)" }}>
+                    <strong style={{ display: "block", marginBottom: "8px", color: "var(--text-primary)", fontSize: "15px" }}>도움말 / 해설</strong>
+                    <p style={{ fontSize: "15px", color: "var(--text-secondary)", lineHeight: "1.6", wordBreak: "keep-all" }}>
+                      {currentQuiz.explanation}
+                    </p>
+                  </div>
                 )}
               </div>
 

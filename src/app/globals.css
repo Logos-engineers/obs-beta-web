@@ -8,6 +8,8 @@
   --border-subtle: rgba(13, 28, 45, 0.08);
   --overlay: rgba(13, 28, 45, 0.6);
   --error: #ff5449;
+  --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+  --container-padding: 20px;
 }
 
 * {
@@ -18,25 +20,19 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-base);
+  background: #e5e7eb; /* 데스크탑 바탕색 */
   color: var(--text-primary);
   font-family:
     -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
     sans-serif;
 }
 
-body {
-  min-height: 100vh;
-}
-
+button,
+input,
 a {
+  font: inherit;
   color: inherit;
   text-decoration: none;
-}
-
-button,
-input {
-  font: inherit;
 }
 
 button {
@@ -44,6 +40,8 @@ button {
   border: 0;
   background: transparent;
   padding: 0;
+  cursor: pointer;
+  outline: none;
 }
 
 input {
@@ -56,15 +54,24 @@ input {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  background: var(--bg-base);
+  align-items: flex-start;
 }
 
 .phone-frame {
   position: relative;
   width: 100%;
-  max-width: 393px;
+  max-width: 430px;
   min-height: 100dvh;
-  background: var(--bg-base);
+  background: #f7f8fa; /* 앱 메인 배경색 고정 */
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 431px) {
+  .phone-frame {
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+    margin: 0 auto;
+  }
 }
 
 .screen {
@@ -174,11 +181,12 @@ input {
 .review-nav {
   position: relative;
   z-index: 2;
-  height: 46px;
+  height: calc(46px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  justify-content: flex-start;
+  padding: env(safe-area-inset-top, 0px) 0 0; /* 좌우 패딩 20px 제거 */
+  margin-bottom: 8px;
 }
 
 .obs-back-btn,
@@ -400,7 +408,7 @@ input {
 
 .review-modal-overlay {
   align-items: flex-end;
-  padding: 0;
+  padding: 12px;
 }
 
 .obs-calendar-container {
@@ -420,10 +428,10 @@ input {
 
 .obs-calendar-handle,
 .review-modal-handle {
-  width: 80px;
-  height: 5px;
+  width: 40px;
+  height: 4px;
   border-radius: 10px;
-  background: var(--border-subtle);
+  background: #E5E7EB;
 }
 
 .obs-calendar-header {
@@ -692,12 +700,33 @@ input {
 
 /* --- Figma Node 618-2203 Implementation --- */
 
+.review-intro-screen,
 .review-quiz-screen {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  background: #f2f4f7;
+  background: var(--bg-base);
+  padding: 0 var(--container-padding) 140px; /* 좌우 20px 패딩만 유지 */
   position: relative;
+  min-height: 100dvh;
+}
+
+.review-content-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.review-intro-summary-card,
+.review-obs-card {
+  width: 100% !important; /* 가로폭 꽉 채우기 강제 */
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(101, 97, 255, 0.04);
+  border: 1px solid rgba(101, 97, 255, 0.05);
 }
 
 .review-top-nav {
@@ -816,14 +845,12 @@ input {
 }
 
 .review-fixed-cta {
-  position: fixed;
+  position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 100%;
-  max-width: 430px;
-  padding: 12px 24px 40px;
-  background: linear-gradient(to top, #f2f4f7 80%, rgba(242, 244, 247, 0));
+  padding: 16px var(--container-padding) calc(var(--safe-area-bottom) + 8px);
+  background: linear-gradient(to top, var(--bg-base) 80%, rgba(247, 248, 250, 0));
   z-index: 10;
 }
 
@@ -940,12 +967,13 @@ input {
 }
 
 .review-modal-content {
-  width: 100%;
-  max-width: 430px;
+  width: calc(100% - 24px); /* 좌우 여백 12px씩 확보 */
+  max-width: 366px; /* 피그마 기준 앱 너비와 유사한 최대폭 */
   overflow: hidden;
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   background: #ffffff;
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+  box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
 }
 
 .review-modal-image-wrapper {
@@ -961,8 +989,8 @@ input {
 .review-modal-text-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px 20px 32px;
+  gap: 16px;
+  padding: 32px 20px 40px;
 }
 
 .review-modal-text-wrapper.is-top-only {
@@ -972,16 +1000,17 @@ input {
 .review-modal-title {
   margin: 0;
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .review-modal-desc {
   margin: 0;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-size: 16px;
-  font-weight: 600;
-  line-height: 25.6px;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 .review-modal-btn-wrapper {
@@ -1203,11 +1232,11 @@ input {
 
 /* ── Review OX Layout ── */
 .review-content-wrapper {
-  flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 8px 16px 120px;
+  flex: 1;
 }
 
 .review-obs-card {

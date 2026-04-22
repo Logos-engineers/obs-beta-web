@@ -177,9 +177,9 @@ export function ReviewOxScreen({ contentId }: { contentId: number | null }) {
             <div className="review-modal-image-wrapper">
               <Image
                 alt={isCorrect ? "정답" : "오답"}
-                height={80}
+                height={120}
                 src={isCorrect ? "/icons/human-o.svg" : "/icons/human-x.svg"}
-                width={80}
+                width={120}
               />
             </div>
 
@@ -188,15 +188,11 @@ export function ReviewOxScreen({ contentId }: { contentId: number | null }) {
                 {isCorrect ? "정답이에요!" : "아쉬워요, 오답이에요"}
               </h2>
               <div className="review-modal-desc">
-                <p>
-                  정답은 <strong style={{ color: "var(--primary)" }}>{currentQuiz.correctAnswer}</strong> 에요.
-                </p>
-                {currentQuiz.explanation && (
-                  <p className="review-modal-explanation" style={{ marginTop: "12px", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+                {currentQuiz.explanation ? (
+                  <p className="review-modal-explanation" style={{ wordBreak: "keep-all" }}>
                     {currentQuiz.explanation}
                   </p>
-                )}
-                {!currentQuiz.explanation && (
+                ) : (
                   <p>
                     {isCorrect
                       ? "말씀 내용을 아주 잘 기억하고 계시네요!"
