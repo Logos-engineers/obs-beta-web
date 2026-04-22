@@ -69,8 +69,9 @@ export function ReviewEssayScreen({
         setContent(contentData);
         setQuizzes(quizData);
 
-        if (quizData.length < 3 && !quizData.find(q => q.stepNumber === 3 || q.questionType === "ESSAY" || q.questionType === "OPEN_ENDED")) {
-          setError("3번째 퀴즈(서술형)를 찾을 수 없습니다. 데이터 생성이 지연되고 있거나 누락되었을 수 있습니다.");
+        // 데이터가 아예 없는 경우에만 에러 표시
+        if (quizData.length === 0) {
+          setError("복습할 퀴즈 데이터를 찾을 수 없습니다.");
         }
       } catch (loadError) {
         if (!active) return;
@@ -87,8 +88,11 @@ export function ReviewEssayScreen({
   const currentQuiz = useMemo(
     () =>
       quizzes.find((quiz) => quiz.stepNumber === 3) ??
-      quizzes.find((quiz) => quiz.questionType === "ESSAY" || quiz.questionType === "OPEN_ENDED") ??
-      (quizzes.length >= 3 ? quizzes[2] : null),
+      quizzes.find((quiz) => {
+        const type = quiz.questionType?.toUpperCase();
+        return type === "ESSAY" || type === "OPEN_ENDED";
+      }) ??
+      (quizzes.length > 0 ? quizzes[quizzes.length - 1] : null),
     [quizzes],
   );
 
@@ -100,7 +104,8 @@ export function ReviewEssayScreen({
     return <main className="review-loading-screen">{error || "퀴즈를 찾을 수 없습니다."}</main>;
   }
 
-  const activeStep = (currentQuiz.stepNumber as 1 | 2 | 3);
+  // 3번째 화면이므로 단계 표시용 step은 3으로 고정하거나 퀴즈 데이터의 것을 따름
+  const activeStep = 3 as 1 | 2 | 3;
   const completedResults: Partial<Record<1 | 2 | 3, "correct" | "incorrect">> = {};
   if (q1) completedResults[1] = q1 === "o" ? "correct" : "incorrect";
   if (q2) completedResults[2] = q2 === "o" ? "correct" : "incorrect";
@@ -147,6 +152,12 @@ export function ReviewEssayScreen({
                 <p className={`review-essay-answer-text${showAnswer ? "" : " is-blurred"}`}>
                   {currentQuiz.correctAnswer ?? "정답이 아직 등록되지 않았습니다."}
                 </p>
+                {showAnswer && currentQuiz.explanation && (
+                  <p className="review-essay-explanation-text" style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid var(--border-subtle)", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.6" }}>
+                    <strong style={{ display: "block", marginBottom: "4px", color: "var(--text-primary)" }}>도움말/해설</strong>
+                    {currentQuiz.explanation}
+                  </p>
+                )}
               </div>
 
               {/* 정답 보기 button (hidden after answer is shown) */}

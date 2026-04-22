@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import type { SessionUser } from "@/types/obs";
 
 const SESSION_KEY = "loen-obs-beta-session";
@@ -8,22 +9,10 @@ export interface SessionState {
   user: SessionUser;
 }
 
-// Mock user for UI development when no session exists
-const MOCK_SESSION: SessionState = {
-  accessToken: "mock-access-token",
-  refreshToken: "mock-refresh-token",
-  user: {
-    userId: "mock-user-123",
-    name: "테스트 유저",
-    email: "test@example.com",
-    role: "USER"
-  }
-};
-
 export function readSession(): SessionState | null {
   if (typeof window === "undefined") return null;
 
-  const raw = localStorage.getItem(SESSION_KEY);
+  const raw = Cookies.get(SESSION_KEY);
   if (!raw) {
     return null;
   }
@@ -31,19 +20,20 @@ export function readSession(): SessionState | null {
   try {
     return JSON.parse(raw) as SessionState;
   } catch {
-    localStorage.removeItem(SESSION_KEY);
+    Cookies.remove(SESSION_KEY);
     return null;
   }
 }
 
 export function writeSession(session: SessionState) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  // Set cookie for 7 days, sameSite: strict for security
+  Cookies.set(SESSION_KEY, JSON.stringify(session), { expires: 7, sameSite: "strict" });
 }
 
 export function clearSession() {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(SESSION_KEY);
+  Cookies.remove(SESSION_KEY);
 }
 
 export function isAdmin(): boolean {

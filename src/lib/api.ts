@@ -1,4 +1,4 @@
-import { readSession } from "@/lib/session";
+import { readSession, clearSession } from "@/lib/session";
 import type {
   ObsContentDetail,
   ObsContentListResponse,
@@ -53,6 +53,15 @@ async function apiRequest<T>(
     ...options,
     headers,
   });
+
+  // Handle unauthorized/token expired
+  if (response.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("세션이 만료되었습니다. 다시 로그인해 주세요.");
+  }
 
   const text = await response.text();
   const payload = text ? (JSON.parse(text) as ApiResponse<T>) : null;
