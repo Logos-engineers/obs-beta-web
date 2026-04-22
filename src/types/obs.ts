@@ -39,6 +39,7 @@ export interface ObsQuiz {
   questionType: string;
   questionText: string;
   correctAnswer: string | null;
+  explanation?: string | null;
 }
 
 export interface SessionUser {

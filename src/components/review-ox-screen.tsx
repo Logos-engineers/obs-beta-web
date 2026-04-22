@@ -187,12 +187,23 @@ export function ReviewOxScreen({ contentId }: { contentId: number | null }) {
               <h2 className="review-modal-title">
                 {isCorrect ? "정답이에요!" : "아쉬워요, 오답이에요"}
               </h2>
-              <p className="review-modal-desc">
-                정답은 <strong style={{ color: "var(--primary)" }}>{currentQuiz.correctAnswer}</strong> 에요.{" "}
-                {isCorrect
-                  ? "말씀 내용을 아주 잘 기억하고 계시네요!"
-                  : "다시 한번 본문을 묵상해보면 어떨까요?"}
-              </p>
+              <div className="review-modal-desc">
+                <p>
+                  정답은 <strong style={{ color: "var(--primary)" }}>{currentQuiz.correctAnswer}</strong> 에요.
+                </p>
+                {currentQuiz.explanation && (
+                  <p className="review-modal-explanation" style={{ marginTop: "12px", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+                    {currentQuiz.explanation}
+                  </p>
+                )}
+                {!currentQuiz.explanation && (
+                  <p>
+                    {isCorrect
+                      ? "말씀 내용을 아주 잘 기억하고 계시네요!"
+                      : "다시 한번 본문을 묵상해보면 어떨까요?"}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="review-modal-btn-wrapper">

@@ -234,7 +234,14 @@ export function ReviewMultipleScreen({ contentId, q1 }: { contentId: number | nu
                 </div>
                 <div className="review-modal-text-wrapper">
                   <h2 className="review-modal-title">정답이에요!</h2>
-                  <p className="review-modal-desc">말씀 내용을 아주 잘 기억하고 계시네요!</p>
+                  <div className="review-modal-desc">
+                    <p>말씀 내용을 아주 잘 기억하고 계시네요!</p>
+                    {currentQuiz.explanation && (
+                      <p className="review-modal-explanation" style={{ marginTop: "12px", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+                        {currentQuiz.explanation}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="review-modal-btn-wrapper">
                   <button
@@ -252,7 +259,14 @@ export function ReviewMultipleScreen({ contentId, q1 }: { contentId: number | nu
               <>
                 <div className="review-modal-text-wrapper is-top-only">
                   <h2 className="review-modal-title">정답은 &apos;{correctAnswer}&apos; 에요!</h2>
-                  <p className="review-modal-desc">다시 한번 본문을 묵상해보면 어떨까요?</p>
+                  <div className="review-modal-desc">
+                    <p>다시 한번 본문을 묵상해보면 어떨까요?</p>
+                    {currentQuiz.explanation && (
+                      <p className="review-modal-explanation" style={{ marginTop: "12px", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+                        {currentQuiz.explanation}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="review-modal-btn-wrapper">
                   <button
