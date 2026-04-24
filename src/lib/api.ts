@@ -1,5 +1,7 @@
 import { readSession, clearSession } from "@/lib/session";
 import type {
+  AnalyzeResult,
+  CreateContentRequest,
   ObsContentDetail,
   ObsContentListResponse,
   ObsQuiz,
@@ -214,5 +216,121 @@ export async function toggleObsReviewScrap(reviewId: number) {
   }
   return apiRequest<ObsReview>(`/obs/reviews/${reviewId}/scrap`, {
     method: "PATCH",
+  });
+}
+
+// PDF 업로드 → r2Key
+export async function uploadObsPdf(file: File): Promise<{ r2Key: string }> {
+  if (USE_MOCKS) {
+    await delay(1200);
+    return { r2Key: "mock/obs-pdf-key.pdf" };
+  }
+
+  const session = readSession();
+  if (!session?.accessToken) {
+    throw new Error("로그인이 필요합니다.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/admin/obs/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+    },
+    body: formData,
+  });
+
+  if (response.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("세션이 만료되었습니다. 다시 로그인해 주세요.");
+  }
+
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as { status: number; message: string; data: { r2Key: string } }) : null;
+
+  if (!response.ok) {
+    throw new Error(payload?.message ?? `파일 업로드에 실패했습니다. (${response.status})`);
+  }
+
+  if (!payload) {
+    throw new Error("응답 본문이 비어 있습니다.");
+  }
+
+  return payload.data;
+}
+
+// AI 분석 중계 → sections + quizzes
+export async function analyzeObs(r2Key: string): Promise<AnalyzeResult> {
+  if (USE_MOCKS) {
+    await delay(2000);
+    return {
+      sections: [
+        { type: "intro", text: "오늘 본문은 요나 4장입니다. 하나님께서 니느웨를 용서하신 후 요나의 반응을 살펴봅니다." },
+        { type: "point", title: "첫 번째 포인트", reference: "요나 4:1-4", answer: "요나는 하나님의 긍휼에 분노했습니다." },
+        { type: "point", title: "두 번째 포인트", reference: "요나 4:5-8" },
+        { type: "application", text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?" },
+      ],
+      quizzes: [
+        { id: 0, stepNumber: 1, questionType: "OX", questionText: "요나는 니느웨가 용서받은 것을 기뻐했다.", correctAnswer: "X", explanation: "요나는 오히려 분노했습니다 (요나 4:1)" },
+        { id: 0, stepNumber: 2, questionType: "SHORT", questionText: "하나님께서 요나를 위해 준비하신 것은 무엇인가요?", correctAnswer: "박넝쿨", explanation: "요나 4:6에 기록되어 있습니다." },
+        { id: 0, stepNumber: 3, questionType: "ESSAY", questionText: "요나서를 통해 알 수 있는 하나님의 마음은 무엇인가요?", correctAnswer: null, explanation: null },
+      ],
+    };
+  }
+
+  return apiRequest<AnalyzeResult>("/admin/obs/analyze", {
+    method: "POST",
+    body: JSON.stringify({ r2Key }),
+  });
+}
+
+// 교안 저장
+export async function createObsContent(data: CreateContentRequest): Promise<ObsContentDetail> {
+  if (USE_MOCKS) {
+    await delay(800);
+    return {
+      id: 999,
+      title: data.title,
+      biblePassage: data.biblePassage,
+      publishedDate: data.publishedDate,
+      reviewStatus: null,
+      isScraped: false,
+      sections: data.sections,
+      isPublished: false,
+      reviewId: null,
+    };
+  }
+
+  return apiRequest<ObsContentDetail>("/admin/obs/contents", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// 발행 상태 변경
+export async function publishObsContent(id: number, isPublished: boolean): Promise<ObsContentDetail> {
+  if (USE_MOCKS) {
+    await delay(500);
+    return {
+      id,
+      title: "Mock 교안",
+      biblePassage: "요나 4:1-11",
+      publishedDate: "2024-04-07",
+      reviewStatus: null,
+      isScraped: false,
+      sections: [],
+      isPublished,
+      reviewId: null,
+    };
+  }
+
+  return apiRequest<ObsContentDetail>(`/admin/obs/contents/${id}/publish`, {
+    method: "PATCH",
+    body: JSON.stringify({ isPublished }),
   });
 }

@@ -48,3 +48,24 @@ export interface SessionUser {
   email: string;
   role: string;  // "USER" | "ADMIN"
 }
+
+// AI 분석 결과 sections 내부 타입
+export interface ObsSection {
+  type: 'intro' | 'point' | 'application';
+  [key: string]: unknown;
+}
+
+// AI 분석 응답
+export interface AnalyzeResult {
+  sections: ObsSection[];
+  quizzes: ObsQuiz[];
+}
+
+// 교안 저장 요청
+export interface CreateContentRequest {
+  title: string;
+  biblePassage: string;
+  publishedDate: string; // "YYYY-MM-DD"
+  sections: ObsSection[];
+  quizzes: Omit<ObsQuiz, 'id'>[];
+}
