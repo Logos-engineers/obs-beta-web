@@ -174,35 +174,35 @@ input {
 }
 
 .obs-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-base);
+  min-height: 100dvh;
 }
 
 .obs-back-bar,
 .review-nav {
   position: relative;
   z-index: 2;
-  height: calc(46px + env(safe-area-inset-top, 0px));
+  height: calc(56px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: env(safe-area-inset-top, 0px) 0 0; /* 좌우 패딩 20px 제거 */
+  justify-content: space-between;
+  padding: env(safe-area-inset-top, 0px) var(--container-padding) 0 0; /* 왼쪽 패딩을 0으로 설정 */
   margin-bottom: 8px;
 }
 
 .obs-back-btn,
 .review-back-btn,
 .obs-icon-button {
-  width: 24px;
-  height: 24px;
+  width: 44px; /* 터치 영역 확보 */
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.obs-back-btn {
-  width: 100px;
-  justify-content: flex-start;
+  margin-left: -4px; /* 아이콘 내부 여백을 고려한 미세 조정 */
 }
 
 .obs-clear-date-btn {
@@ -222,15 +222,15 @@ input {
 }
 
 .obs-search-wrapper {
-  padding: 16px;
+  padding: 16px var(--container-padding) 24px;
 }
 
 .obs-search-input {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
   background: var(--border-subtle);
 }
 
@@ -238,7 +238,7 @@ input {
   flex: 1;
   color: var(--text-primary);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .obs-search-text-input::placeholder {
@@ -249,7 +249,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px 8px;
+  padding: 0 var(--container-padding) 16px;
 }
 
 .obs-filter-left {
@@ -260,13 +260,12 @@ input {
 .obs-filter-chip {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 8px;
   background: var(--border-subtle);
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 600;
-  line-height: 21px;
   cursor: pointer;
 }
 
@@ -288,29 +287,28 @@ input {
 }
 
 .obs-card-wrapper {
-  padding: 8px 16px;
+  padding: 8px var(--container-padding);
 }
 
 .obs-card {
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.06),
-    0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .obs-card-header-row {
   display: flex;
   justify-content: space-between;
-  padding: 16px 16px 8px;
+  padding: 20px 20px 12px;
 }
 
 .obs-card-header-left {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .obs-card-header-right {
@@ -321,7 +319,7 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 8px;
   background: var(--border-subtle);
 }
@@ -329,8 +327,7 @@ input {
 .obs-review-tag-text {
   color: var(--text-primary);
   font-size: 12px;
-  font-weight: 600;
-  line-height: 18px;
+  font-weight: 700;
 }
 
 .obs-card-date,
@@ -339,7 +336,6 @@ input {
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
-  line-height: 21px;
 }
 
 .obs-card-title {
@@ -347,11 +343,11 @@ input {
   color: var(--text-primary);
   font-size: 20px;
   font-weight: 700;
-  line-height: 28px;
+  line-height: 1.4;
 }
 
 .obs-card-button-container {
-  padding: 8px 16px 16px;
+  padding: 8px 20px 20px;
 }
 
 .obs-card-button-container.is-double {
