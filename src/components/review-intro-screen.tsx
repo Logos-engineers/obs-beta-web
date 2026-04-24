@@ -62,7 +62,7 @@ export function ReviewIntroScreen({
     <main className="review-intro-screen" style={{ paddingBottom: '140px' }}>
       <div className="review-intro-bg" />
 
-      <div className="review-nav" style={{ paddingLeft: 0, paddingRight: 0 }}>
+      <div className="review-nav">
         <button
           className="review-back-btn"
           onClick={() => router.back()}
