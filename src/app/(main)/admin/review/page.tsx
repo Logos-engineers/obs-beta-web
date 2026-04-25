@@ -192,6 +192,7 @@ export default function AdminReviewPage() {
   const [checked, setChecked] = useState(false);
   const [sections, setSections] = useState<ObsSection[]>([]);
   const [quizzes, setQuizzes] = useState<ObsQuiz[]>([]);
+  const [summary, setSummary] = useState<string[]>([]);
 
   // Basic info
   const [title, setTitle] = useState("");
@@ -227,6 +228,7 @@ export default function AdminReviewPage() {
       const data = JSON.parse(raw) as AnalyzeResult;
       setSections(data.sections ?? []);
       setQuizzes(data.quizzes ?? []);
+      setSummary(data.summary ?? []);
     } catch {
       router.replace("/admin");
       return;
@@ -264,6 +266,7 @@ export default function AdminReviewPage() {
     biblePassage: biblePassage.trim(),
     publishedDate,
     sections,
+    summary,
     quizzes: quizzes.map(({ id: _id, ...rest }) => rest),
   });
 
@@ -355,6 +358,29 @@ export default function AdminReviewPage() {
             onChange={(e) => setPublishedDate(e.target.value)}
             style={inputStyle}
           />
+        </div>
+
+        {/* 핵심 메시지 요약 (3개) */}
+        <div style={cardStyle}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#0D1C2D", marginBottom: 12 }}>
+            말씀 핵심 요약 (3개)
+          </p>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ marginBottom: i < 2 ? 12 : 0 }}>
+              <label style={fieldLabelStyle}>핵심 {i + 1}</label>
+              <input
+                type="text"
+                value={summary[i] ?? ""}
+                onChange={(e) => {
+                  const next = [...summary];
+                  next[i] = e.target.value;
+                  setSummary(next);
+                }}
+                placeholder={`핵심 메시지 ${i + 1}을 입력하세요`}
+                style={inputStyle}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Sections 검토 */}
