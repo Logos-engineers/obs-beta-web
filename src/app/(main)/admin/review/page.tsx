@@ -226,6 +226,7 @@ export default function AdminReviewPage() {
 
     try {
       const data = JSON.parse(raw) as AnalyzeResult;
+      console.log("[Debug] Loaded AnalyzeResult:", data);
       setSections(data.sections ?? []);
       setQuizzes(data.quizzes ?? []);
       setSummary(data.summary ?? []);
