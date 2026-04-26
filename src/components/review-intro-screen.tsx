@@ -61,7 +61,11 @@ export function ReviewIntroScreen({
     // 2. 없으면 기존처럼 sections에서 추출 (하위 호환성)
     return content.sections
       .filter((s) => s.type === "point")
-      .map((s) => String(s.title ?? "").replace(/\( \)/g, s.answer || "")) // 괄호 치환 보완
+      .map((s) => {
+        const title = String(s.title ?? "");
+        const answer = typeof s.answer === "string" ? s.answer : "";
+        return title.replace(/\( \)/g, answer);
+      }) // 괄호 치환 보완
       .slice(0, 3);
   }, [content]);
 

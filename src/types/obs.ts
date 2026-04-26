@@ -18,6 +18,7 @@ export interface ObsContentListResponse {
 
 export interface ObsContentDetail extends ObsContentSummary {
   sections: Array<Record<string, unknown>>;
+  summary?: string[] | null;
   isPublished?: boolean;
   reviewId: number | null;
 }
@@ -58,6 +59,7 @@ export interface ObsSection {
 // AI 분석 응답
 export interface AnalyzeResult {
   sections: ObsSection[];
+  summary: string[];
   quizzes: ObsQuiz[];
 }
 

@@ -275,6 +275,11 @@ export async function analyzeObs(r2Key: string): Promise<AnalyzeResult> {
         { type: "point", title: "두 번째 포인트", reference: "요나 4:5-8" },
         { type: "application", text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?" },
       ],
+      summary: [
+        "요나는 니느웨를 향한 하나님의 긍휼에 분노하며 자신의 의를 내세웠습니다.",
+        "하나님은 박넝쿨 사건을 통해 요나의 편협한 시각을 깨닫게 하셨습니다.",
+        "하나님은 자격 없는 모든 영혼을 아끼고 사랑하시는 분임을 보여주십니다."
+      ],
       quizzes: [
         { id: 0, stepNumber: 1, questionType: "OX", questionText: "요나는 니느웨가 용서받은 것을 기뻐했다.", correctAnswer: "X", explanation: "요나는 오히려 분노했습니다 (요나 4:1)" },
         { id: 0, stepNumber: 2, questionType: "SHORT", questionText: "하나님께서 요나를 위해 준비하신 것은 무엇인가요?", correctAnswer: "박넝쿨", explanation: "요나 4:6에 기록되어 있습니다." },
