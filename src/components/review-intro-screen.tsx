@@ -52,9 +52,16 @@ export function ReviewIntroScreen({
 
   const points = useMemo(() => {
     if (!content) return [];
+    
+    // 1. AI 요약 필드(summary)가 있으면 우선적으로 사용
+    if (content.summary && content.summary.length > 0) {
+      return content.summary.slice(0, 3);
+    }
+    
+    // 2. 없으면 기존처럼 sections에서 추출 (하위 호환성)
     return content.sections
       .filter((s) => s.type === "point")
-      .map((s) => String(s.title ?? ""))
+      .map((s) => String(s.title ?? "").replace(/\( \)/g, s.answer || "")) // 괄호 치환 보완
       .slice(0, 3);
   }, [content]);
 
