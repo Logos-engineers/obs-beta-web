@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { fetchObsContent } from "@/lib/api";
+import { getVerses } from "@/lib/bibleLoader";
+import { parsePassage } from "@/lib/bibleParser";
 
 interface BibleVerse {
   number: number;
@@ -37,6 +39,15 @@ export function ObsBibleScreen({ contentId }: { contentId: number }) {
           setVerses(bibleSection.verses);
         } else {
           setPassage(data.biblePassage);
+          const parsed = parsePassage(data.biblePassage);
+          if (parsed) {
+            const end = parsed.endVerse >= 999 ? undefined : parsed.endVerse;
+            getVerses(parsed.bookCode, parsed.chapter, parsed.startVerse, end)
+              .then((localVerses) => {
+                if (active && localVerses.length > 0) setVerses(localVerses);
+              })
+              .catch(() => undefined);
+          }
         }
       })
       .catch(() => undefined)
