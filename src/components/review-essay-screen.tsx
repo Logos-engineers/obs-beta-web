@@ -16,6 +16,7 @@ const DUMMY_CONTENT: ObsContentDetail = {
   publishedDate: "2026-04-10",
   reviewStatus: null,
   isScraped: false,
+  reviewCount: 0,
   sections: [],
   reviewId: null,
 };

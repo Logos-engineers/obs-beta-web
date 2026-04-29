@@ -14,6 +14,7 @@ export const MOCK_OBS_CONTENTS: ObsContentSummary[] = [
     publishedDate: "2024-04-07",
     reviewStatus: "NOT_STARTED",
     isScraped: false,
+    reviewCount: 0,
   },
   {
     id: 2,
@@ -22,6 +23,7 @@ export const MOCK_OBS_CONTENTS: ObsContentSummary[] = [
     publishedDate: "2024-03-31",
     reviewStatus: "DONE",
     isScraped: true,
+    reviewCount: 1,
   },
   {
     id: 3,
@@ -30,6 +32,7 @@ export const MOCK_OBS_CONTENTS: ObsContentSummary[] = [
     publishedDate: "2024-03-24",
     reviewStatus: "IN_PROGRESS",
     isScraped: false,
+    reviewCount: 0,
   },
   {
     id: 4,
@@ -38,6 +41,7 @@ export const MOCK_OBS_CONTENTS: ObsContentSummary[] = [
     publishedDate: "2024-03-17",
     reviewStatus: "NOT_STARTED",
     isScraped: false,
+    reviewCount: 0,
   },
 ];
 
@@ -144,6 +148,7 @@ export const MOCK_REVIEW_DATA: ObsReview = {
   isScraped: false,
   completedAt: null,
   emotions: [],
+  reviewCount: 0,
 };
 
 export const MOCK_EMOTIONS = [

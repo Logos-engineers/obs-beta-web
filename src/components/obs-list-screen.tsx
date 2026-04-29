@@ -65,7 +65,7 @@ function ObsCard({
   processing: boolean;
   onUnscrap: (contentId: number) => void;
 }) {
-  const reviewLabel = getReviewStatusLabel(item.reviewStatus);
+  const reviewLabel = getReviewStatusLabel(item.reviewStatus, item.reviewCount);
   const actionHref = scrapOnly ? buildReviewResultHref(item) : buildReviewIntroHref(item);
   const actionLabel = scrapOnly ? "아카이빙한 OBS 보기" : "복습하기";
 
