@@ -9,6 +9,7 @@ const contents: ObsContentDetail[] = [
     reviewStatus: "IN_PROGRESS",
     reviewId: null,
     isScraped: true,
+    reviewCount: 0,
     sections: [
       {
         type: "intro",
@@ -41,6 +42,7 @@ const contents: ObsContentDetail[] = [
     reviewStatus: "DONE",
     reviewId: null,
     isScraped: true,
+    reviewCount: 1,
     sections: [
       {
         type: "intro",
@@ -66,6 +68,7 @@ const contents: ObsContentDetail[] = [
     reviewStatus: "NOT_STARTED",
     reviewId: null,
     isScraped: false,
+    reviewCount: 0,
     sections: [
       {
         type: "intro",

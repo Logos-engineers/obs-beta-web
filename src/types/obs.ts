@@ -7,6 +7,7 @@ export interface ObsContentSummary {
   publishedDate: string;
   reviewStatus: ReviewStatus | null;
   isScraped: boolean;
+  reviewCount: number;
 }
 
 export interface ObsContentListResponse {
@@ -32,6 +33,7 @@ export interface ObsReview {
   isScraped: boolean;
   completedAt: string | null;
   emotions: string[];
+  reviewCount: number;
 }
 
 export interface ObsQuiz {

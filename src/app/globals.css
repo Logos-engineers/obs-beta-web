@@ -320,7 +320,7 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 8px;
   background: var(--border-subtle);
 }
@@ -328,7 +328,7 @@ input {
 .obs-review-tag-text {
   color: var(--text-primary);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .obs-card-date,
