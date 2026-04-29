@@ -86,7 +86,7 @@ export function isSameCalendarDate(date: string, selectedDate: Date | null): boo
 }
 
 export function getReviewStatusLabel(status: ReviewStatus | null, reviewCount?: number): string | null {
-  if (status === "DONE") return `복습 ${reviewCount ?? 1}회 완료`;
+  if (status === "DONE") return `복습 ${reviewCount || 1}회 완료`;
   if (status === "IN_PROGRESS") return "복습 중";
   return null;
 }
