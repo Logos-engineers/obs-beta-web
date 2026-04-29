@@ -154,3 +154,17 @@ export const MOCK_REVIEW_DATA: ObsReview = {
 export const MOCK_EMOTIONS = [
   "기뻐요", "슬퍼요", "놀라워요", "회개해요", "감사해요", "평안해요", "힘들어요", "기대돼요"
 ];
+
+// 백엔드 EmotionTag enum과 1:1 대응
+export const EMOTIONS: { value: string; label: string }[] = [
+  { value: "JOY",        label: "기쁨" },
+  { value: "GRATITUDE",  label: "감사" },
+  { value: "PEACE",      label: "평안" },
+  { value: "HOPE",       label: "소망" },
+  { value: "CHALLENGE",  label: "도전" },
+  { value: "COMFORT",    label: "위로" },
+  { value: "CONVICTION", label: "확신" },
+  { value: "REPENTANCE", label: "회개" },
+  { value: "LOVE",       label: "사랑" },
+  { value: "WONDER",     label: "경이" },
+];
