@@ -703,7 +703,7 @@ input {
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
-  padding: 0 var(--container-padding) 140px; /* 좌우 20px 패딩만 유지 */
+  padding: 0 0 140px; /* 수평 패딩 제거 — nav 위치 통일을 위해 content-wrapper로 이동 */
   position: relative;
   min-height: 100dvh;
 }
@@ -714,6 +714,7 @@ input {
   flex-direction: column;
   gap: 16px;
   flex: 1;
+  padding: 0 var(--container-padding);
 }
 
 .review-intro-summary-card,
@@ -1234,6 +1235,7 @@ input {
   flex-direction: column;
   gap: 16px;
   flex: 1;
+  padding: 0 var(--container-padding);
 }
 
 .review-obs-card {
@@ -1381,10 +1383,12 @@ input {
 .obs-detail-nav {
   position: relative;
   z-index: 2;
-  height: 46px;
+  height: calc(56px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top, 0px) var(--container-padding) 0 22px;
+  margin-bottom: 8px;
 }
 
 .obs-detail-scroll {
