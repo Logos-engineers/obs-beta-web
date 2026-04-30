@@ -100,9 +100,14 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         <div className="obs-reader-section">
           <div className="obs-completion-card">
             <div className="obs-completion-card-header">
-              <div className="obs-completion-card-icon">
-                <Image alt="" aria-hidden height={32} src="/icons/bigbook.svg" width={32} />
-              </div>
+              <Image
+                alt=""
+                aria-hidden
+                className="obs-completion-card-thumb"
+                height={32}
+                src="/images/obs-emotion-thumb.png"
+                width={32}
+              />
               <span className="obs-completion-card-title">
                 OBS를 통해 어떤 감정을 느꼈나요?
               </span>
@@ -130,9 +135,14 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         <div className="obs-reader-section">
           <div className="obs-completion-card">
             <div className="obs-completion-card-header">
-              <div className="obs-completion-card-icon">
-                <Image alt="" aria-hidden height={32} src="/icons/bigbook.svg" width={32} />
-              </div>
+              <Image
+                alt=""
+                aria-hidden
+                className="obs-completion-card-thumb"
+                height={32}
+                src="/images/obs-apply-thumb.png"
+                width={32}
+              />
               <span className="obs-completion-card-title">적용하기</span>
             </div>
             <div className="obs-completion-divider" />
@@ -141,12 +151,12 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
                 {APPLICATION_QUESTION}
               </p>
             </div>
-            <div className="obs-reader-input-wrapper">
+            <div className="obs-completion-input-wrapper">
               <textarea
-                className="obs-reader-textarea"
+                className="obs-completion-textarea"
                 onChange={(e) => setApplicationText(e.target.value)}
                 placeholder="이번 주 나의 목표를 입력해주세요"
-                rows={6}
+                rows={5}
                 value={applicationText}
               />
             </div>

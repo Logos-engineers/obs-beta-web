@@ -1434,11 +1434,11 @@ input {
 }
 
 .obs-detail-illustration {
-  flex: 1;
+  width: 100%;
+  height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 280px;
   padding: 6px 3px;
 }
 
@@ -1976,7 +1976,7 @@ input {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(101, 97, 255, 0.15);
+  background: rgba(101, 97, 255, 0.2);
   color: var(--primary);
   font-size: 18px;
   font-weight: 600;
@@ -2005,22 +2005,20 @@ input {
   padding: 16px;
 }
 
-.obs-completion-card-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(101, 97, 255, 0.1);
-  border-radius: 10px;
+.obs-completion-card-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 9.6px;
+  object-fit: cover;
   flex-shrink: 0;
 }
 
 .obs-completion-card-title {
+  font-family: Pretendard, sans-serif;
   font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
+  font-weight: 700;
+  color: rgba(13, 28, 45, 0.8);
+  line-height: 160%;
   flex: 1;
 }
 
@@ -2042,12 +2040,14 @@ input {
   padding: 10px 20px;
   border-radius: 12px;
   background: rgba(13, 28, 45, 0.08);
-  color: var(--text-primary);
-  font-size: 15px;
-  font-weight: 500;
+  color: rgba(13, 28, 45, 0.8);
+  font-family: Pretendard, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   text-align: center;
+  line-height: 150%;
 }
 
 .obs-emotion-chip--selected {
@@ -2061,10 +2061,42 @@ input {
 }
 
 .obs-completion-application-text {
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-primary);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 160%;
+  color: rgba(13, 28, 45, 0.8);
   margin: 0;
+}
+
+.obs-completion-input-wrapper {
+  padding: 0 16px 16px;
+}
+
+.obs-completion-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(13, 28, 45, 0.08);
+  border: none;
+  outline: none;
+  color: rgba(13, 28, 45, 0.8);
+  font-family: Pretendard, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 140%;
+  resize: none;
+  transition: background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.obs-completion-textarea:focus {
+  background: rgba(13, 28, 45, 0.12);
+}
+
+.obs-completion-textarea::placeholder {
+  color: rgba(13, 28, 45, 0.5);
 }
 
 @media (min-width: 768px) {

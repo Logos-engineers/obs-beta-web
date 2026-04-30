@@ -157,14 +157,10 @@ export const MOCK_EMOTIONS = [
 
 // 백엔드 EmotionTag enum과 1:1 대응
 export const EMOTIONS: { value: string; label: string }[] = [
-  { value: "JOY",        label: "기쁨" },
-  { value: "GRATITUDE",  label: "감사" },
-  { value: "PEACE",      label: "평안" },
-  { value: "HOPE",       label: "소망" },
-  { value: "CHALLENGE",  label: "도전" },
-  { value: "COMFORT",    label: "위로" },
-  { value: "CONVICTION", label: "확신" },
-  { value: "REPENTANCE", label: "회개" },
-  { value: "LOVE",       label: "사랑" },
-  { value: "WONDER",     label: "경이" },
+  { value: "PEACE",      label: "마음이 편해졌어요" },
+  { value: "WONDER",     label: "궁금증이 생겨요" },
+  { value: "GRATITUDE",  label: "하나님께 감사해요" },
+  { value: "HOPE",       label: "의지가 커졌어요" },
+  { value: "CHALLENGE",  label: "마음이 흔들려요" },
+  { value: "REPENTANCE", label: "나를 돌아보게 돼요" },
 ];

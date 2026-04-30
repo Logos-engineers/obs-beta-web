@@ -22,6 +22,7 @@ export interface ObsContentDetail extends ObsContentSummary {
   summary?: string[] | null;
   isPublished?: boolean;
   reviewId: number | null;
+  summaryAnswers?: Record<string, string> | null;
 }
 
 export interface ObsReview {
@@ -34,6 +35,7 @@ export interface ObsReview {
   completedAt: string | null;
   emotions: string[];
   reviewCount: number;
+  summaryAnswers?: Record<string, string> | null;
 }
 
 export interface ObsQuiz {
