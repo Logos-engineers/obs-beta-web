@@ -11,14 +11,12 @@ import {
 } from "@/lib/api";
 import { EMOTIONS } from "@/lib/mock-data";
 
-const APPLICATION_QUESTION =
-  '나에게는 품고 기도할 "태신자"가 있습니까? 아직 없다면 2025년 1년 동안 품고 기도할 "태신자"를 찾게 해달라고 함께 기도해 봅시다.';
-
 export function ObsCompletionScreen({ contentId }: { contentId: number }) {
   const router = useRouter();
   const [reviewId, setReviewId] = useState<number | null>(null);
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [applicationText, setApplicationText] = useState("");
+  const [applicationQuestion, setApplicationQuestion] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -30,9 +28,19 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         const content = await fetchObsContent(contentId);
         if (!active) return;
 
+        // application 섹션의 마지막 나눔 질문 추출
+        const sections = content.sections || [];
+        const appSection = sections.find((s: any) => s.type === "application") as any;
+        if (appSection?.text) {
+          const lines = (appSection.text as string)
+            .split("\n")
+            .filter((t) => t.trim().length > 0);
+          const last = lines[lines.length - 1];
+          if (last) setApplicationQuestion(last.replace(/^[0-9.]+\s*/, "").trim());
+        }
+
         if (content.reviewId) {
           setReviewId(content.reviewId);
-          // 기존 저장 데이터 복원
           if (content.emotions && content.emotions.length > 0) {
             setSelectedEmotions(content.emotions);
           }
@@ -153,7 +161,7 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
             <div className="obs-completion-divider" />
             <div className="obs-completion-application-question">
               <p className="obs-completion-application-text">
-                {APPLICATION_QUESTION}
+                {applicationQuestion}
               </p>
             </div>
             <div className="obs-completion-input-wrapper">
