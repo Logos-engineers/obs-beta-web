@@ -8,7 +8,6 @@ import {
   startObsReview,
   saveObsEmotions,
   saveObsApplication,
-  completeObsReview,
 } from "@/lib/api";
 import { EMOTIONS } from "@/lib/mock-data";
 
@@ -33,6 +32,13 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
 
         if (content.reviewId) {
           setReviewId(content.reviewId);
+          // 기존 저장 데이터 복원
+          if (content.emotions && content.emotions.length > 0) {
+            setSelectedEmotions(content.emotions);
+          }
+          if (content.applicationAnswer) {
+            setApplicationText(content.applicationAnswer);
+          }
         } else {
           const review = await startObsReview(contentId);
           if (!active) return;
@@ -73,7 +79,6 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
       if (applicationText.trim()) {
         await saveObsApplication(rid, applicationText.trim());
       }
-      await completeObsReview(rid);
 
       router.push("/");
     } catch (err) {

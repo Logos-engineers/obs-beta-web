@@ -23,6 +23,8 @@ export interface ObsContentDetail extends ObsContentSummary {
   isPublished?: boolean;
   reviewId: number | null;
   summaryAnswers?: Record<string, string> | null;
+  emotions?: string[] | null;
+  applicationAnswer?: string | null;
 }
 
 export interface ObsReview {
