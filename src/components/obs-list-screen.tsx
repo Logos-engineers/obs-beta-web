@@ -73,20 +73,19 @@ function ObsCard({
     <div className="obs-card-wrapper">
       <article className="obs-card">
         <div className="obs-card-header-row">
-          <div className="obs-card-header-left">
+          <div className="obs-card-meta-row">
             <p className="obs-card-date">{formatObsDate(item.publishedDate)}</p>
-            <Link className="obs-card-title obs-card-title-link" href={`/${item.id}`}>
-              {item.title}
-            </Link>
-            <p className="obs-card-verse">{item.biblePassage}</p>
-          </div>
-          {reviewLabel ? (
-            <div className="obs-card-header-right">
+            {reviewLabel ? (
               <div className="obs-review-tag">
                 <span className="obs-review-tag-text">{reviewLabel}</span>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+          <Link className="obs-card-title-row" href={`/${item.id}`}>
+            <span className="obs-card-title">{item.title}</span>
+            <Image alt="" aria-hidden height={20} src="/icons/chevron-right.svg" style={{ flexShrink: 0 }} width={20} />
+          </Link>
+          <p className="obs-card-verse">{item.biblePassage}</p>
         </div>
         <div className={`obs-card-button-container ${scrapOnly ? "is-double" : ""}`}>
           <Link

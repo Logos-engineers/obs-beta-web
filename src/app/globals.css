@@ -301,19 +301,28 @@ input {
 
 .obs-card-header-row {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 6px;
   padding: 20px 20px 12px;
 }
 
-.obs-card-header-left {
-  flex: 1;
+.obs-card-meta-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.obs-card-header-right {
-  padding-left: 12px;
+.obs-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.obs-card-title-row:hover .obs-card-title {
+  color: var(--primary);
 }
 
 .obs-review-tag {
@@ -1486,13 +1495,6 @@ input {
 .obs-card-title-link {
   color: inherit;
   text-decoration: none;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 28px;
-}
-
-.obs-card-title-link:hover {
-  color: var(--primary);
 }
 
 /* ── OBS Reader (성경 말씀 / 말씀 정리하기) ── */
