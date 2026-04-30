@@ -66,9 +66,10 @@ export function ObsDetailScreen({ contentId }: { contentId: number }) {
         <div className="obs-detail-illustration">
           <Image
             alt="책 일러스트"
-            height={133}
-            src="/icons/bigbook.svg"
-            width={160}
+            height={360}
+            src="/images/obs-book-illustration.png"
+            style={{ objectFit: "contain" }}
+            width={393}
           />
         </div>
       </div>

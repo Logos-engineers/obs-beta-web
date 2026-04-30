@@ -1,29 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { MOCK_EMOTIONS } from "@/lib/mock-data";
+import {
+  fetchObsContent,
+  startObsReview,
+  saveObsEmotions,
+  saveObsApplication,
+  completeObsReview,
+} from "@/lib/api";
+import { EMOTIONS } from "@/lib/mock-data";
 
 const APPLICATION_QUESTION =
   '나에게는 품고 기도할 "태신자"가 있습니까? 아직 없다면 2025년 1년 동안 품고 기도할 "태신자"를 찾게 해달라고 함께 기도해 봅시다.';
 
 export function ObsCompletionScreen({ contentId }: { contentId: number }) {
   const router = useRouter();
+  const [reviewId, setReviewId] = useState<number | null>(null);
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [applicationText, setApplicationText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const toggleEmotion = (emotion: string) => {
+  useEffect(() => {
+    let active = true;
+
+    async function initReview() {
+      try {
+        const content = await fetchObsContent(contentId);
+        if (!active) return;
+
+        if (content.reviewId) {
+          setReviewId(content.reviewId);
+        } else {
+          const review = await startObsReview(contentId);
+          if (!active) return;
+          setReviewId(review.id);
+        }
+      } catch {
+        // reviewId 확보 실패 시 onComplete에서 재시도
+      }
+    }
+
+    void initReview();
+    return () => {
+      active = false;
+    };
+  }, [contentId]);
+
+  const toggleEmotion = (value: string) => {
     setSelectedEmotions((prev) =>
-      prev.includes(emotion)
-        ? prev.filter((e) => e !== emotion)
-        : [...prev, emotion],
+      prev.includes(value) ? prev.filter((e) => e !== value) : [...prev, value],
     );
   };
 
-  const onComplete = () => {
-    // TODO: submit review data (emotions, applicationText)
-    router.push("/");
+  const onComplete = async () => {
+    setSaving(true);
+    setError("");
+
+    try {
+      let rid = reviewId;
+      if (!rid) {
+        const review = await startObsReview(contentId);
+        rid = review.id;
+        setReviewId(rid);
+      }
+
+      if (selectedEmotions.length > 0) {
+        await saveObsEmotions(rid, selectedEmotions);
+      }
+      if (applicationText.trim()) {
+        await saveObsApplication(rid, applicationText.trim());
+      }
+      await completeObsReview(rid);
+
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -43,25 +100,30 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         <div className="obs-reader-section">
           <div className="obs-completion-card">
             <div className="obs-completion-card-header">
-              <div className="obs-completion-card-icon">
-                <Image alt="" aria-hidden height={32} src="/icons/bigbook.svg" width={32} />
-              </div>
+              <Image
+                alt=""
+                aria-hidden
+                className="obs-completion-card-thumb"
+                height={32}
+                src="/images/obs-emotion-thumb.png"
+                width={32}
+              />
               <span className="obs-completion-card-title">
                 OBS를 통해 어떤 감정을 느꼈나요?
               </span>
             </div>
             <div className="obs-completion-divider" />
             <div className="obs-completion-emotions">
-              {MOCK_EMOTIONS.map((emotion) => {
-                const selected = selectedEmotions.includes(emotion);
+              {EMOTIONS.map(({ value, label }) => {
+                const selected = selectedEmotions.includes(value);
                 return (
                   <button
                     className={`obs-emotion-chip${selected ? " obs-emotion-chip--selected" : ""}`}
-                    key={emotion}
-                    onClick={() => toggleEmotion(emotion)}
+                    key={value}
+                    onClick={() => toggleEmotion(value)}
                     type="button"
                   >
-                    {emotion}
+                    {label}
                   </button>
                 );
               })}
@@ -73,9 +135,14 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         <div className="obs-reader-section">
           <div className="obs-completion-card">
             <div className="obs-completion-card-header">
-              <div className="obs-completion-card-icon">
-                <Image alt="" aria-hidden height={32} src="/icons/bigbook.svg" width={32} />
-              </div>
+              <Image
+                alt=""
+                aria-hidden
+                className="obs-completion-card-thumb"
+                height={32}
+                src="/images/obs-apply-thumb.png"
+                width={32}
+              />
               <span className="obs-completion-card-title">적용하기</span>
             </div>
             <div className="obs-completion-divider" />
@@ -84,17 +151,21 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
                 {APPLICATION_QUESTION}
               </p>
             </div>
-            <div className="obs-reader-input-wrapper">
+            <div className="obs-completion-input-wrapper">
               <textarea
-                className="obs-reader-textarea"
+                className="obs-completion-textarea"
                 onChange={(e) => setApplicationText(e.target.value)}
                 placeholder="이번 주 나의 목표를 입력해주세요"
-                rows={6}
+                rows={5}
                 value={applicationText}
               />
             </div>
           </div>
         </div>
+
+        {error ? (
+          <p style={{ color: "red", padding: "0 20px", fontSize: "14px" }}>{error}</p>
+        ) : null}
 
         <div className="obs-reader-scroll-bottom" />
       </div>
@@ -110,10 +181,11 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
           </button>
           <button
             className="obs-reader-cta-btn"
+            disabled={saving}
             onClick={onComplete}
             type="button"
           >
-            OBS 완료하기
+            {saving ? "저장 중..." : "OBS 완료하기"}
           </button>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { fetchObsContent } from "@/lib/api";
+import { fetchObsContent, startObsReview, saveObsSummaryAnswers } from "@/lib/api";
 import { getVerses, type BibleVerse } from "@/lib/bibleLoader";
 import { parseCompactRef } from "@/lib/bibleParser";
 
@@ -35,7 +35,9 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [reviewId, setReviewId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
   // Track expanded state for each card index
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
@@ -67,7 +69,19 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
     fetchObsContent(contentId)
       .then((data) => {
         if (!active) return;
-        
+
+        // reviewId 저장 + 기존 summaryAnswers 복원
+        if (data.reviewId) {
+          setReviewId(data.reviewId);
+        }
+        if (data.summaryAnswers) {
+          const restored: Record<number, string> = {};
+          Object.entries(data.summaryAnswers).forEach(([k, v]) => {
+            restored[Number(k)] = v;
+          });
+          setAnswers(restored);
+        }
+
         setPassage(data.biblePassage || "");
         const sections = data.sections || [];
         const newQuestionCards: QuestionCard[] = [];
@@ -164,7 +178,34 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
     };
   }, [contentId]);
 
-  const onNext = () => {
+  const onNext = async () => {
+    const nonEmpty = Object.fromEntries(
+      Object.entries(answers).filter(([, v]) => v.trim().length > 0)
+    );
+    const hasAnswers = Object.keys(nonEmpty).length > 0;
+
+    if (!hasAnswers) {
+      router.push(`/${contentId}/completion`);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let rid = reviewId;
+      if (!rid) {
+        const review = await startObsReview(contentId);
+        rid = review.id;
+        setReviewId(rid);
+      }
+      await saveObsSummaryAnswers(rid, Object.fromEntries(
+        Object.entries(nonEmpty).map(([k, v]) => [k, v])
+      ));
+    } catch {
+      // 저장 실패해도 다음 화면으로 이동
+    } finally {
+      setSaving(false);
+    }
+
     router.push(`/${contentId}/completion`);
   };
 
@@ -328,8 +369,8 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           <button className="obs-reader-cta-btn-secondary" onClick={() => router.back()} type="button">
             이전으로
           </button>
-          <button className="obs-reader-cta-btn" onClick={onNext} type="button">
-            다음으로
+          <button className="obs-reader-cta-btn" disabled={saving} onClick={onNext} type="button">
+            {saving ? "저장 중..." : "다음으로"}
           </button>
         </div>
       </div>

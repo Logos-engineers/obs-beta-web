@@ -188,6 +188,17 @@ export async function saveObsApplication(reviewId: number, applicationAnswer: st
   });
 }
 
+export async function saveObsSummaryAnswers(reviewId: number, answers: Record<string, string>) {
+  if (USE_MOCKS) {
+    await delay(400);
+    return { ...MOCK_REVIEW_DATA, id: reviewId, summaryAnswers: answers };
+  }
+  return apiRequest<ObsReview>(`/obs/reviews/${reviewId}/summary-answers`, {
+    method: "PATCH",
+    body: JSON.stringify({ answers }),
+  });
+}
+
 export async function saveObsEmotions(reviewId: number, emotions: string[]) {
   if (USE_MOCKS) {
     await delay(400);
