@@ -13,6 +13,12 @@ interface SubItem {
   answer?: string;
   upperLine: boolean;
   lowerLine: boolean;
+  level: number;
+}
+
+interface QuestionItem {
+  text: string;
+  level: number;
 }
 
 interface QuestionCard {
@@ -92,12 +98,23 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           setIntroText(introSection.text || "");
           
           if (introSection.questions && introSection.questions.length > 0) {
-            const subItems: SubItem[] = introSection.questions.map((qText: string, qIdx: number) => ({
-              count: (qIdx + 1).toString(),
-              text: qText,
-              upperLine: qIdx > 0,
-              lowerLine: qIdx < introSection.questions.length - 1
-            }));
+            const subItems: SubItem[] = introSection.questions.map((q: string | QuestionItem, qIdx: number) => {
+              const isObj = typeof q !== 'string';
+              const rawText = isObj ? q.text : q;
+              const level = isObj ? q.level : 1;
+
+              // Clean up glummul-kiho (only 1-2 digits followed by . or ), circled numbers, or symbols)
+              // This protects years like '2025' or '2026'
+              const text = rawText.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
+
+              return {
+                count: level === 1 ? (qIdx + 1).toString() : "",
+                text,
+                upperLine: qIdx > 0,
+                lowerLine: qIdx < introSection.questions.length - 1,
+                level
+              };
+            });
             newQuestionCards.push({
               title: `핵심 요약`,
               subItems,
@@ -111,23 +128,52 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         pointSections.forEach((s: any, pointIdx: number) => {
           const subItems: SubItem[] = [];
 
-          // Main Point
+          // Main Point (Level 0)
           subItems.push({
             count: s.number.toString(),
-            text: s.title,
+            text: s.title.replace(/^[0-9.)①-⑨a-z\-\s•▶]+/, "").trim(),
             answer: s.answer,
             upperLine: false,
-            lowerLine: s.questions && s.questions.length > 0
+            lowerLine: s.questions && s.questions.length > 0,
+            level: 0
           });
 
-          // Sub Questions
+          // Sub Questions and Details
           if (s.questions && Array.isArray(s.questions)) {
-            s.questions.forEach((qText: string, qIdx: number) => {
+            let questionCounter = 0;
+            let detailCounter = 0;
+            let subDetailCounter = 0;
+
+            s.questions.forEach((q: string | QuestionItem, qIdx: number) => {
+              const isObj = typeof q !== 'string';
+              const rawText = isObj ? q.text : q;
+              const level = isObj ? q.level : 1;
+
+              let count = "";
+              if (level === 1) {
+                questionCounter++;
+                detailCounter = 0;
+                subDetailCounter = 0;
+                count = `${s.number}-${questionCounter}`;
+              } else if (level === 2) {
+                detailCounter++;
+                subDetailCounter = 0;
+                count = String.fromCharCode(96 + detailCounter); // a, b, c...
+              } else if (level >= 3) {
+                subDetailCounter++;
+                // Simple Roman Numerals: i, ii, iii, iv, v...
+                const roman = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
+                count = roman[subDetailCounter - 1] || "•";
+              }
+
+              const text = rawText.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
+
               subItems.push({
-                count: `${s.number}-${qIdx + 1}`,
-                text: qText,
+                count,
+                text,
                 upperLine: true,
-                lowerLine: qIdx < s.questions.length - 1
+                lowerLine: qIdx < s.questions.length - 1,
+                level
               });
             });
           }
@@ -141,20 +187,6 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
             reference: s.reference || data.biblePassage
           });
         });
-        
-        // 3. Application -> "나눔 질문"
-        const appSection = sections.find((s: any) => s.type === "application") as any;
-        if (appSection) {
-          const appQuestions = appSection.text.split("\n").filter((t: string) => t.trim().length > 0);
-          const subItems: SubItem[] = appQuestions.map((qText: string, qIdx: number) => ({
-            count: (qIdx + 1).toString(),
-            text: qText.replace(/^[0-9.]+\s*/, ""),
-            upperLine: qIdx > 0,
-            lowerLine: qIdx < appQuestions.length - 1
-          }));
-          newQuestionCards.push({ title: "나눔 질문", subItems });
-        }
-
         setQuestionCards(newQuestionCards);
         
         // Expand all by default initially
@@ -283,20 +315,33 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                     <div className="obs-reader-card-body">
                       <div className="obs-sq-list">
                         {card.subItems.map((sub, subIdx) => (
-                          <div className="obs-sq-row" key={subIdx}>
+                          <div 
+                            className="obs-sq-row" 
+                            key={subIdx}
+                            style={{ 
+                              paddingLeft: '16px',
+                              paddingRight: '16px'
+                            }}
+                          >
                             <div className="obs-sq-left">
                               <div className="obs-sq-upper-line-area">
                                 {sub.upperLine ? <div className="obs-sq-line" /> : null}
                               </div>
-                              <div className="obs-sq-badge">
-                                <span className="obs-sq-badge-text">{sub.count}</span>
-                              </div>
+                              {sub.count ? (
+                                <div className={`obs-sq-badge ${sub.level === 2 ? 'is-sub' : ''}`}>
+                                  <span className="obs-sq-badge-text">{sub.count}</span>
+                                </div>
+                              ) : (
+                                <div className="obs-sq-bullet">
+                                  {sub.level >= 3 ? '•' : ''}
+                                </div>
+                              )}
                               <div className="obs-sq-lower-line-area">
                                 {sub.lowerLine ? <div className="obs-sq-line" /> : null}
                               </div>
                             </div>
                             <div className="obs-sq-right">
-                              <p className="obs-sq-text">
+                              <p className={`obs-sq-text ${sub.level > 1 ? 'is-sub-item' : ''}`}>
                                 {sub.text.split("(").map((part, pIdx) => {
                                   if (pIdx === 0) return part;
                                   const closingIdx = part.indexOf(")");
