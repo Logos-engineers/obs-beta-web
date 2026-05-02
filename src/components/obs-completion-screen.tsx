@@ -16,9 +16,9 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
   const [reviewId, setReviewId] = useState<number | null>(null);
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [applicationText, setApplicationText] = useState("");
-  const [applicationQuestion, setApplicationQuestion] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [applicationQuestions, setApplicationQuestions] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -28,18 +28,34 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         const content = await fetchObsContent(contentId);
         if (!active) return;
 
-        // application 섹션의 마지막 나눔 질문 추출
+        // application 섹션 질문들 추출
         const sections = content.sections || [];
         const appSection = sections.find((s: any) => s.type === "application") as any;
-        if (appSection?.text) {
-          const lines = (appSection.text as string)
-            .split("\n")
-            .filter((t) => t.trim().length > 0);
-          const last = lines[lines.length - 1];
-          if (last) setApplicationQuestion(last.replace(/^[0-9.]+\s*/, "").trim());
+        const questions: string[] = [];
+
+        if (appSection) {
+          if (appSection.questions && Array.isArray(appSection.questions)) {
+            // New format: array of objects
+            appSection.questions.forEach((q: any) => {
+              const text = (typeof q === 'string' ? q : q.text) || "";
+              const cleaned = text.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
+              if (cleaned) questions.push(cleaned);
+            });
+          } else if (appSection.text) {
+            // Old format: newline separated string
+            const lines = (appSection.text as string)
+              .split("\n")
+              .filter((t) => t.trim().length > 0);
+            lines.forEach((line) => {
+              const cleaned = line.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
+              if (cleaned) questions.push(cleaned);
+            });
+          }
         }
+        setApplicationQuestions(questions);
 
         if (content.reviewId) {
+
           setReviewId(content.reviewId);
           if (content.emotions && content.emotions.length > 0) {
             setSelectedEmotions(content.emotions);
@@ -158,11 +174,12 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
               />
               <span className="obs-completion-card-title">적용하기</span>
             </div>
-            <div className="obs-completion-divider" />
             <div className="obs-completion-application-question">
-              <p className="obs-completion-application-text">
-                {applicationQuestion}
-              </p>
+              {applicationQuestions.map((q, qIdx) => (
+                <p className="obs-completion-application-text" key={qIdx}>
+                  {applicationQuestions.length > 1 ? `${qIdx + 1}. ${q}` : q}
+                </p>
+              ))}
             </div>
             <div className="obs-completion-input-wrapper">
               <textarea
