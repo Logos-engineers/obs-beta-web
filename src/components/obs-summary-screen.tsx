@@ -19,6 +19,7 @@ interface SubItem {
   role: ObsItemRole;
 }
 
+
 // v2 schema
 interface ObsItem {
   role: ObsItemRole;
@@ -323,78 +324,70 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                     <div className="obs-reader-card-divider" />
                     <div className="obs-reader-card-body">
                       <div className="obs-sq-list">
-                        {card.subItems.map((sub, subIdx) => (
-                          <div 
-                            className="obs-sq-row" 
-                            key={subIdx}
-                            style={{ 
-                              paddingLeft: '16px',
-                              paddingRight: '16px'
-                            }}
-                          >
-                            <div className="obs-sq-left">
-                              <div className="obs-sq-upper-line-area">
-                                {sub.upperLine ? <div className="obs-sq-line" /> : null}
+                        {card.subItems.map((sub, subIdx) => {
+                          const IS_BIBLE_REF = /^[가-힣]{1,4}\d+[장:]/;
+                          const indent = sub.level === 2 ? 14 : sub.level >= 3 ? 28 : 0;
+
+                          const badgeClass = [
+                            'obs-sq-badge',
+                            sub.level === 2 ? 'is-sub' : '',
+                            sub.level >= 3 ? 'is-deep-sub' : '',
+                            sub.role === 'ANSWER_DETAIL' ? 'is-detail' : '',
+                          ].filter(Boolean).join(' ');
+
+                          return (
+                            <div
+                              key={subIdx}
+                              className="obs-sq-row"
+                              style={{ paddingLeft: `${16 + indent}px`, paddingRight: '16px' }}
+                            >
+                              <div className="obs-sq-badge-col">
+                                {sub.count ? (
+                                  <div className={badgeClass}>
+                                    <span className="obs-sq-badge-text">{sub.count}</span>
+                                  </div>
+                                ) : (
+                                  <div className="obs-sq-bullet" />
+                                )}
                               </div>
-                              {sub.count ? (
-                                <div className={`obs-sq-badge ${sub.level >= 2 ? 'is-sub' : ''} ${sub.role === 'ANSWER_DETAIL' ? 'is-detail' : ''}`}>
-                                  <span className="obs-sq-badge-text">{sub.count}</span>
-                                </div>
-                              ) : (
-                                <div className="obs-sq-bullet">
-                                  {sub.level >= 3 ? '•' : ''}
-                                </div>
-                              )}
-                              <div className="obs-sq-lower-line-area">
-                                {sub.lowerLine ? <div className="obs-sq-line" /> : null}
-                              </div>
-                            </div>
-                            <div className="obs-sq-right">
-                              <p className={`obs-sq-text ${sub.level > 1 ? 'is-sub-item' : ''} ${sub.role === 'ANSWER_DETAIL' ? 'is-detail' : ''}`}>
-                                {sub.text.split("(").map((part, pIdx) => {
-                                  if (pIdx === 0) return part;
-                                  const closingIdx = part.indexOf(")");
-                                  if (closingIdx === -1) return `(${part}`;
-                                  const inside = part.slice(0, closingIdx);
-                                  const after = part.slice(closingIdx + 1);
-                                  const trimmed = inside.trim();
-                                  // 한글 약어(1-4자) + 숫자 + ':'|'장' 으로 시작하면 말씀 참조로 판단
-                                  const IS_BIBLE_REF = /^[가-힣]{1,4}\d+[장:]/;
-                                  const isBibleRef = IS_BIBLE_REF.test(trimmed);
-                                  if (isBibleRef) {
-                                    const refParts = trimmed.split(/,\s*/);
+                              <div className="obs-sq-right">
+                                <p className="obs-sq-text">
+                                  {sub.text.split("(").map((part, pIdx) => {
+                                    if (pIdx === 0) return part;
+                                    const closingIdx = part.indexOf(")");
+                                    if (closingIdx === -1) return `(${part}`;
+                                    const inside = part.slice(0, closingIdx);
+                                    const after = part.slice(closingIdx + 1);
+                                    const trimmed = inside.trim();
+                                    if (IS_BIBLE_REF.test(trimmed)) {
+                                      const refParts = trimmed.split(/,\s*/);
+                                      return (
+                                        <span key={pIdx}>
+                                          ({refParts.map((refPart, rIdx) => {
+                                            const isRef = IS_BIBLE_REF.test(refPart.trim());
+                                            return (
+                                              <span key={rIdx}>
+                                                {rIdx > 0 && ', '}
+                                                {isRef ? (
+                                                  <button className="obs-bible-ref-btn" onClick={(e) => { e.stopPropagation(); handleBibleRefClick(refPart.trim()); }} type="button">{refPart.trim()}</button>
+                                                ) : <span>{refPart.trim()}</span>}
+                                              </span>
+                                            );
+                                          })}){after}
+                                        </span>
+                                      );
+                                    }
                                     return (
                                       <span key={pIdx}>
-                                        ({refParts.map((refPart, rIdx) => {
-                                          const isRef = IS_BIBLE_REF.test(refPart.trim());
-                                          return (
-                                            <span key={rIdx}>
-                                              {rIdx > 0 && ', '}
-                                              {isRef ? (
-                                                <button
-                                                  className="obs-bible-ref-btn"
-                                                  onClick={(e) => { e.stopPropagation(); handleBibleRefClick(refPart.trim()); }}
-                                                  type="button"
-                                                >{refPart.trim()}</button>
-                                              ) : (
-                                                <span>{refPart.trim()}</span>
-                                              )}
-                                            </span>
-                                          );
-                                        })}){after}
+                                        (<span className="obs-blank-word">{sub.answer || inside}</span>){after}
                                       </span>
                                     );
-                                  }
-                                  return (
-                                    <span key={pIdx}>
-                                      (<span className="obs-blank-word">{sub.answer || inside}</span>){after}
-                                    </span>
-                                  );
-                                })}
-                              </p>
+                                  })}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
