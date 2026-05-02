@@ -163,19 +163,18 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           let level1Counter = 0;
           let level2Counter = 0;
           let level3Counter = 0;
-          const roman = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
 
           pointItems.forEach((item, idx) => {
             let count = "";
             if (item.level === 1) {
               level1Counter++; level2Counter = 0; level3Counter = 0;
-              count = `${s.number}-${level1Counter}`;
+              count = `(${level1Counter})`;
             } else if (item.level === 2) {
               level2Counter++; level3Counter = 0;
-              count = String.fromCharCode(96 + level2Counter);
+              count = `${level2Counter})`;
             } else {
               level3Counter++;
-              count = roman[level3Counter - 1] || "•";
+              count = String.fromCharCode(96 + level3Counter); // a, b, c...
             }
             subItems.push({
               count,
