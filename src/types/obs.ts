@@ -18,7 +18,7 @@ export interface ObsContentListResponse {
 }
 
 export interface ObsContentDetail extends ObsContentSummary {
-  sections: Array<Record<string, unknown>>;
+  sections: ObsSection[];
   summary?: string[] | null;
   isPublished?: boolean;
   reviewId: number | null;
@@ -56,11 +56,36 @@ export interface SessionUser {
   role: string;  // "USER" | "ADMIN"
 }
 
-// AI 분석 결과 sections 내부 타입
-export interface ObsSection {
-  type: 'intro' | 'point' | 'application';
-  [key: string]: unknown;
+// Role-based item (v2 schema)
+export type ObsItemRole = 'QUESTION' | 'SUB_QUESTION' | 'ANSWER_DETAIL' | 'NOTE';
+
+export interface ObsItem {
+  role: ObsItemRole;
+  level: number;
+  text: string;
 }
+
+export interface ObsSectionIntro {
+  type: 'intro';
+  text: string;
+  items: ObsItem[];
+}
+
+export interface ObsSectionPoint {
+  type: 'point';
+  number: number;
+  title: string;
+  answer: string | null;
+  reference: string;
+  items: ObsItem[];
+}
+
+export interface ObsSectionApplication {
+  type: 'application';
+  items: ObsItem[];
+}
+
+export type ObsSection = ObsSectionIntro | ObsSectionPoint | ObsSectionApplication;
 
 // AI 분석 응답
 export interface AnalyzeResult {

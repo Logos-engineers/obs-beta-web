@@ -7,6 +7,8 @@ import { fetchObsContent, startObsReview, saveObsSummaryAnswers } from "@/lib/ap
 import { getVerses, type BibleVerse } from "@/lib/bibleLoader";
 import { parseCompactRef } from "@/lib/bibleParser";
 
+type ObsItemRole = 'QUESTION' | 'SUB_QUESTION' | 'ANSWER_DETAIL' | 'NOTE';
+
 interface SubItem {
   count: string;
   text: string;
@@ -14,9 +16,18 @@ interface SubItem {
   upperLine: boolean;
   lowerLine: boolean;
   level: number;
+  role: ObsItemRole;
 }
 
-interface QuestionItem {
+// v2 schema
+interface ObsItem {
+  role: ObsItemRole;
+  level: number;
+  text: string;
+}
+
+// v1 legacy (questions array without role)
+interface LegacyQuestionItem {
   text: string;
   level: number;
 }
@@ -92,34 +103,49 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         const sections = data.sections || [];
         const newQuestionCards: QuestionCard[] = [];
 
-        // 1. Intro Questions -> "핵심 요약 1"
+        // v2: items 배열 사용. v1 legacy: questions 배열 폴백
+        const getItems = (section: any): ObsItem[] => {
+          if (section.items && Array.isArray(section.items)) {
+            return section.items as ObsItem[];
+          }
+          // legacy v1: questions 배열 → role 추론 (level 1이면 QUESTION, 아니면 ANSWER_DETAIL)
+          const qs: (string | LegacyQuestionItem)[] = section.questions || [];
+          return qs.map((q) => {
+            const isObj = typeof q !== 'string';
+            return {
+              role: 'QUESTION' as ObsItemRole,
+              level: isObj ? q.level : 1,
+              text: isObj ? q.text : q,
+            };
+          });
+        };
+
+        const cleanText = (raw: string) =>
+          raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
+
+        // 1. Intro -> "핵심 요약"
         const introSection = sections.find((s: any) => s.type === "intro") as any;
         if (introSection) {
           setIntroText(introSection.text || "");
-          
-          if (introSection.questions && introSection.questions.length > 0) {
-            const subItems: SubItem[] = introSection.questions.map((q: string | QuestionItem, qIdx: number) => {
-              const isObj = typeof q !== 'string';
-              const rawText = isObj ? q.text : q;
-              const level = isObj ? q.level : 1;
 
-              // Clean up glummul-kiho (only 1-2 digits followed by . or ), circled numbers, or symbols)
-              // This protects years like '2025' or '2026'
-              const text = rawText.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
-
+          const introItems = getItems(introSection).filter((i) => i.role !== 'NOTE');
+          if (introItems.length > 0) {
+            let questionCounter = 0;
+            let subCounter = 0;
+            const subItems: SubItem[] = introItems.map((item, idx) => {
+              let count = "";
+              if (item.level === 1) { questionCounter++; subCounter = 0; count = questionCounter.toString(); }
+              else { subCounter++; count = String.fromCharCode(96 + subCounter); }
               return {
-                count: level === 1 ? (qIdx + 1).toString() : "",
-                text,
-                upperLine: qIdx > 0,
-                lowerLine: qIdx < introSection.questions.length - 1,
-                level
+                count,
+                text: cleanText(item.text),
+                upperLine: idx > 0,
+                lowerLine: idx < introItems.length - 1,
+                level: item.level,
+                role: item.role,
               };
             });
-            newQuestionCards.push({
-              title: `핵심 요약`,
-              subItems,
-              reference: data.biblePassage
-            });
+            newQuestionCards.push({ title: "핵심 요약", subItems, reference: data.biblePassage });
           }
         }
 
@@ -127,65 +153,48 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         const pointSections = sections.filter((s: any) => s.type === "point");
         pointSections.forEach((s: any, pointIdx: number) => {
           const subItems: SubItem[] = [];
+          const pointItems = getItems(s).filter((i) => i.role !== 'NOTE');
 
-          // Main Point (Level 0)
           subItems.push({
             count: s.number.toString(),
             text: s.title.replace(/^[0-9.)①-⑨a-z\-\s•▶]+/, "").trim(),
             answer: s.answer,
             upperLine: false,
-            lowerLine: s.questions && s.questions.length > 0,
-            level: 0
+            lowerLine: pointItems.length > 0,
+            level: 0,
+            role: 'QUESTION',
           });
 
-          // Sub Questions and Details
-          if (s.questions && Array.isArray(s.questions)) {
-            let questionCounter = 0;
-            let detailCounter = 0;
-            let subDetailCounter = 0;
+          let level1Counter = 0;
+          let level2Counter = 0;
+          let level3Counter = 0;
+          const roman = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
 
-            s.questions.forEach((q: string | QuestionItem, qIdx: number) => {
-              const isObj = typeof q !== 'string';
-              const rawText = isObj ? q.text : q;
-              const level = isObj ? q.level : 1;
-
-              let count = "";
-              if (level === 1) {
-                questionCounter++;
-                detailCounter = 0;
-                subDetailCounter = 0;
-                count = `${s.number}-${questionCounter}`;
-              } else if (level === 2) {
-                detailCounter++;
-                subDetailCounter = 0;
-                count = String.fromCharCode(96 + detailCounter); // a, b, c...
-              } else if (level >= 3) {
-                subDetailCounter++;
-                // Simple Roman Numerals: i, ii, iii, iv, v...
-                const roman = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
-                count = roman[subDetailCounter - 1] || "•";
-              }
-
-              const text = rawText.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
-
-              subItems.push({
-                count,
-                text,
-                upperLine: true,
-                lowerLine: qIdx < s.questions.length - 1,
-                level
-              });
+          pointItems.forEach((item, idx) => {
+            let count = "";
+            if (item.level === 1) {
+              level1Counter++; level2Counter = 0; level3Counter = 0;
+              count = `${s.number}-${level1Counter}`;
+            } else if (item.level === 2) {
+              level2Counter++; level3Counter = 0;
+              count = String.fromCharCode(96 + level2Counter);
+            } else {
+              level3Counter++;
+              count = roman[level3Counter - 1] || "•";
+            }
+            subItems.push({
+              count,
+              text: cleanText(item.text),
+              upperLine: true,
+              lowerLine: idx < pointItems.length - 1,
+              level: item.level,
+              role: item.role,
             });
-          }
+          });
 
           const qNum = pointIdx + 1;
           const cardTitle = qNum === 1 ? "첫번째 질문" : qNum === 2 ? "두번째 질문" : qNum === 3 ? "세번째 질문" : `${qNum}번째 질문`;
-
-          newQuestionCards.push({
-            title: cardTitle,
-            subItems,
-            reference: s.reference || data.biblePassage
-          });
+          newQuestionCards.push({ title: cardTitle, subItems, reference: s.reference || data.biblePassage });
         });
         setQuestionCards(newQuestionCards);
         
@@ -328,7 +337,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                                 {sub.upperLine ? <div className="obs-sq-line" /> : null}
                               </div>
                               {sub.count ? (
-                                <div className={`obs-sq-badge ${sub.level === 2 ? 'is-sub' : ''}`}>
+                                <div className={`obs-sq-badge ${sub.level >= 2 ? 'is-sub' : ''} ${sub.role === 'ANSWER_DETAIL' ? 'is-detail' : ''}`}>
                                   <span className="obs-sq-badge-text">{sub.count}</span>
                                 </div>
                               ) : (
@@ -341,7 +350,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                               </div>
                             </div>
                             <div className="obs-sq-right">
-                              <p className={`obs-sq-text ${sub.level > 1 ? 'is-sub-item' : ''}`}>
+                              <p className={`obs-sq-text ${sub.level > 1 ? 'is-sub-item' : ''} ${sub.role === 'ANSWER_DETAIL' ? 'is-detail' : ''}`}>
                                 {sub.text.split("(").map((part, pIdx) => {
                                   if (pIdx === 0) return part;
                                   const closingIdx = part.indexOf(")");
