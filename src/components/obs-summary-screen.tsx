@@ -199,6 +199,30 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
             reference: s.reference || data.biblePassage 
           });
         });
+
+        // 3. Application -> "삶으로 응답하기" 카드 생성
+        const appSection = sections.find((s: any) => s.type === "application") as any;
+        if (appSection) {
+          const appItems = getItems(appSection).filter((i: any) => i.role !== 'NOTE');
+          if (appItems.length > 0) {
+            const appSubItems: SubItem[] = appItems.map((item, idx) => ({
+              count: (idx + 1).toString(),
+              text: cleanText(item.text),
+              upperLine: idx > 0,
+              lowerLine: idx < appItems.length - 1,
+              level: item.level,
+              role: item.role,
+            }));
+
+            newQuestionCards.push({
+              titlePrefix: "적용 질문",
+              title: "삶으로 응답하기",
+              subItems: appSubItems,
+              reference: data.biblePassage
+            });
+          }
+        }
+
         setQuestionCards(newQuestionCards);
         
         // Expand all by default initially
@@ -334,6 +358,26 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                         {card.subItems.map((sub, subIdx) => {
                           const IS_BIBLE_REF = /^[가-힣]{1,4}\d+[장:]/;
                           const indent = sub.level === 2 ? 14 : sub.level >= 3 ? 28 : 0;
+                          const isNote = sub.role === 'NOTE';
+
+                          if (isNote) {
+                            return (
+                              <div key={subIdx} className="obs-sq-row" style={{ paddingLeft: `${16 + indent + 44}px`, paddingRight: '16px', marginBottom: '12px' }}>
+                                <div className="obs-note-box" style={{ 
+                                  background: '#F9FAFB', 
+                                  borderRadius: '12px', 
+                                  padding: '12px 16px', 
+                                  border: '1px solid #E5E7EB',
+                                  width: '100%'
+                                }}>
+                                  <p className="obs-sq-text" style={{ fontSize: '14px', color: '#4B5563', lineHeight: '1.5' }}>
+                                    <span style={{ fontWeight: 700, marginRight: '4px' }}>▶</span>
+                                    {sub.text}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          }
 
                           const badgeClass = [
                             'obs-sq-badge',
@@ -341,6 +385,13 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                             sub.level >= 3 ? 'is-deep-sub' : '',
                             sub.role === 'ANSWER_DETAIL' ? 'is-detail' : '',
                           ].filter(Boolean).join(' ');
+
+                          const badgeStyle: React.CSSProperties = {
+                            background: sub.level === 1 ? 'rgba(101, 97, 255, 0.1)' : 
+                                       sub.level === 2 ? '#F2F4F7' : '#FFFFFF',
+                            color: sub.level === 1 ? 'var(--primary)' : '#667085',
+                            border: sub.level >= 3 ? '1px solid #E5E7EB' : 'none'
+                          };
 
                           return (
                             <div
@@ -350,8 +401,8 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                             >
                               <div className="obs-sq-badge-col">
                                 {sub.count ? (
-                                  <div className={badgeClass}>
-                                    <span className="obs-sq-badge-text">{sub.count}</span>
+                                  <div className={badgeClass} style={badgeStyle}>
+                                    <span className="obs-sq-badge-text" style={{ color: badgeStyle.color }}>{sub.count}</span>
                                   </div>
                                 ) : (
                                   <div className="obs-sq-bullet" />
