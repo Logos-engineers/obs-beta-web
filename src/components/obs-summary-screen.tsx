@@ -34,6 +34,7 @@ interface LegacyQuestionItem {
 }
 
 interface QuestionCard {
+  titlePrefix: string;
   title: string;
   subItems: SubItem[];
   reference?: string;
@@ -81,12 +82,16 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
     }));
   };
 
+  const cleanText = (raw: string) =>
+    raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
+
   useEffect(() => {
     let active = true;
 
     fetchObsContent(contentId)
       .then((data) => {
         if (!active) return;
+        console.log("DEBUG: OBS Content Data:", data);
 
         // reviewId 저장 + 기존 summaryAnswers 복원
         if (data.reviewId) {
@@ -121,32 +126,31 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
         };
 
-        const cleanText = (raw: string) =>
-          raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
-
-        // 1. Intro -> "핵심 요약"
+        // 1. Intro -> "말씀 정리하기" 텍스트 처리 + "핵심 내용" 카드 생성
         const introSection = sections.find((s: any) => s.type === "intro") as any;
         if (introSection) {
           setIntroText(introSection.text || "");
-
-          const introItems = getItems(introSection).filter((i) => i.role !== 'NOTE');
-          if (introItems.length > 0) {
-            let questionCounter = 0;
-            let subCounter = 0;
-            const subItems: SubItem[] = introItems.map((item, idx) => {
-              let count = "";
-              if (item.level === 1) { questionCounter++; subCounter = 0; count = questionCounter.toString(); }
-              else { subCounter++; count = String.fromCharCode(96 + subCounter); }
-              return {
-                count,
+          
+          const items = getItems(introSection).filter((i: any) => i.role !== 'NOTE');
+          if (items.length > 0) {
+            const introSubItems: SubItem[] = [];
+            items.forEach((item, idx) => {
+              introSubItems.push({
+                count: (idx + 1).toString(),
                 text: cleanText(item.text),
                 upperLine: idx > 0,
-                lowerLine: idx < introItems.length - 1,
+                lowerLine: idx < items.length - 1,
                 level: item.level,
                 role: item.role,
-              };
+              });
             });
-            newQuestionCards.push({ title: "핵심 요약", subItems, reference: data.biblePassage });
+            
+            newQuestionCards.push({
+              titlePrefix: "전체 흐름",
+              title: "핵심 내용",
+              subItems: introSubItems,
+              reference: data.biblePassage
+            });
           }
         }
 
@@ -154,17 +158,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         const pointSections = sections.filter((s: any) => s.type === "point");
         pointSections.forEach((s: any, pointIdx: number) => {
           const subItems: SubItem[] = [];
-          const pointItems = getItems(s).filter((i) => i.role !== 'NOTE');
-
-          subItems.push({
-            count: s.number.toString(),
-            text: s.title.replace(/^[0-9.)①-⑨a-z\-\s•▶]+/, "").trim(),
-            answer: s.answer,
-            upperLine: false,
-            lowerLine: pointItems.length > 0,
-            level: 0,
-            role: 'QUESTION',
-          });
+          const pointItems = getItems(s).filter((i: any) => i.role !== 'NOTE');
 
           let level1Counter = 0;
           let level2Counter = 0;
@@ -186,7 +180,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
             subItems.push({
               count,
               text: cleanText(item.text),
-              upperLine: true,
+              upperLine: idx > 0,
               lowerLine: idx < pointItems.length - 1,
               level: item.level,
               role: item.role,
@@ -194,9 +188,40 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
 
           const qNum = pointIdx + 1;
-          const cardTitle = qNum === 1 ? "첫번째 질문" : qNum === 2 ? "두번째 질문" : qNum === 3 ? "세번째 질문" : `${qNum}번째 질문`;
-          newQuestionCards.push({ title: cardTitle, subItems, reference: s.reference || data.biblePassage });
+          // 전략 A: 포인트 제목(요약 문구)을 카드 타이틀로 일관되게 사용
+          const displayTitle = s.title.replace("( )", s.answer || "( )").trim();
+          
+          newQuestionCards.push({ 
+            titlePrefix: `${qNum}번째 질문`,
+            title: displayTitle, 
+            subItems, 
+            reference: s.reference || data.biblePassage 
+          });
         });
+
+        // 3. Application -> "삶으로 응답하기" 카드 생성
+        const appSection = sections.find((s: any) => s.type === "application") as any;
+        if (appSection) {
+          const appItems = getItems(appSection).filter((i: any) => i.role !== 'NOTE');
+          if (appItems.length > 0) {
+            const appSubItems: SubItem[] = appItems.map((item, idx) => ({
+              count: (idx + 1).toString(),
+              text: cleanText(item.text),
+              upperLine: idx > 0,
+              lowerLine: idx < appItems.length - 1,
+              level: item.level,
+              role: item.role,
+            }));
+
+            newQuestionCards.push({
+              titlePrefix: "적용 질문",
+              title: "삶으로 응답하기",
+              subItems: appSubItems,
+              reference: data.biblePassage
+            });
+          }
+        }
+
         setQuestionCards(newQuestionCards);
         
         // Expand all by default initially
@@ -308,13 +333,18 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                 <div 
                   className="obs-reader-card-header" 
                   onClick={() => toggleCard(idx)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', alignItems: 'flex-start' }}
                 >
-                  <div className="obs-sq-q-badge">Q</div>
-                  <div className="obs-reader-card-title-col">
-                    <span className="obs-reader-card-title">{card.title}</span>
+                  <div className="obs-sq-q-badge" style={{ marginTop: '2px' }}>Q</div>
+                  <div className="obs-reader-card-title-col" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>
+                      {card.titlePrefix}
+                    </span>
+                    <span className="obs-reader-card-title" style={{ fontSize: '18px', lineHeight: '1.4' }}>
+                      {card.title}
+                    </span>
                   </div>
-                  <div className={`obs-reader-card-chevron ${isExpanded ? 'expanded' : ''}`}>
+                  <div className={`obs-reader-card-chevron ${isExpanded ? 'expanded' : ''}`} style={{ marginTop: '4px' }}>
                     <Image alt="" height={24} src="/icons/chevron_down.svg" width={24} />
                   </div>
                 </div>
@@ -327,6 +357,26 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                         {card.subItems.map((sub, subIdx) => {
                           const IS_BIBLE_REF = /^[가-힣]{1,4}\d+[장:]/;
                           const indent = sub.level === 2 ? 14 : sub.level >= 3 ? 28 : 0;
+                          const isNote = sub.role === 'NOTE';
+
+                          if (isNote) {
+                            return (
+                              <div key={subIdx} className="obs-sq-row" style={{ paddingLeft: `${16 + indent + 44}px`, paddingRight: '16px', marginBottom: '12px' }}>
+                                <div className="obs-note-box" style={{ 
+                                  background: '#F9FAFB', 
+                                  borderRadius: '12px', 
+                                  padding: '12px 16px', 
+                                  border: '1px solid #E5E7EB',
+                                  width: '100%'
+                                }}>
+                                  <p className="obs-sq-text" style={{ fontSize: '14px', color: '#4B5563', lineHeight: '1.5' }}>
+                                    <span style={{ fontWeight: 700, marginRight: '4px' }}>▶</span>
+                                    {sub.text}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          }
 
                           const badgeClass = [
                             'obs-sq-badge',
@@ -334,6 +384,13 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                             sub.level >= 3 ? 'is-deep-sub' : '',
                             sub.role === 'ANSWER_DETAIL' ? 'is-detail' : '',
                           ].filter(Boolean).join(' ');
+
+                          const badgeStyle: React.CSSProperties = {
+                            background: sub.level === 1 ? 'rgba(101, 97, 255, 0.1)' : 
+                                       sub.level === 2 ? '#F2F4F7' : '#FFFFFF',
+                            color: sub.level === 1 ? 'var(--primary)' : '#667085',
+                            border: sub.level >= 3 ? '1px solid #E5E7EB' : 'none'
+                          };
 
                           return (
                             <div
@@ -343,8 +400,8 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                             >
                               <div className="obs-sq-badge-col">
                                 {sub.count ? (
-                                  <div className={badgeClass}>
-                                    <span className="obs-sq-badge-text">{sub.count}</span>
+                                  <div className={badgeClass} style={badgeStyle}>
+                                    <span className="obs-sq-badge-text" style={{ color: badgeStyle.color }}>{sub.count}</span>
                                   </div>
                                 ) : (
                                   <div className="obs-sq-bullet" />
@@ -352,7 +409,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                               </div>
                               <div className="obs-sq-right">
                                 <p className="obs-sq-text">
-                                  {sub.text.split("(").map((part, pIdx) => {
+                                  {(sub.text || "").split("(").map((part, pIdx) => {
                                     if (pIdx === 0) return part;
                                     const closingIdx = part.indexOf(")");
                                     if (closingIdx === -1) return `(${part}`;
