@@ -2148,6 +2148,22 @@ input {
   line-height: 1.5;
 }
 
+.obs-sq-badge.is-detail {
+  background: transparent;
+  border: 1px dashed #dee2e6;
+}
+
+.obs-sq-badge.is-detail .obs-sq-badge-text {
+  color: #adb5bd;
+  font-size: 11px;
+}
+
+.obs-sq-text.is-detail {
+  color: #adb5bd;
+  font-style: italic;
+  font-size: 14px;
+}
+
 .obs-sq-right {
   flex: 1;
   padding: 10px 0 16px 8px; /* 간격 소폭 조정 */

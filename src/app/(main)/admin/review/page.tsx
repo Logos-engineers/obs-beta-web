@@ -20,19 +20,27 @@ function SectionCard({ section, index, onChange }: {
     application: "적용",
   };
 
-  if (section.type === "intro" || section.type === "application") {
-    const label = typeLabel[section.type];
-    const text = typeof section.text === "string" ? section.text : "";
-
+  if (section.type === "intro") {
     return (
       <div style={cardStyle}>
-        <p style={sectionLabelStyle}>{label}</p>
+        <p style={sectionLabelStyle}>{typeLabel.intro}</p>
         <textarea
-          value={text}
+          value={section.text}
           rows={4}
           onChange={(e) => onChange({ ...section, text: e.target.value })}
           style={textareaStyle}
         />
+      </div>
+    );
+  }
+
+  if (section.type === "application") {
+    return (
+      <div style={cardStyle}>
+        <p style={sectionLabelStyle}>{typeLabel.application}</p>
+        <pre style={{ fontSize: 12, color: "rgba(13,28,45,0.6)", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {JSON.stringify(section.items, null, 2)}
+        </pre>
       </div>
     );
   }
@@ -80,15 +88,7 @@ function SectionCard({ section, index, onChange }: {
     );
   }
 
-  // Fallback for unknown types — read-only JSON dump
-  return (
-    <div style={cardStyle}>
-      <p style={sectionLabelStyle}>{String(section.type)}</p>
-      <pre style={{ fontSize: 12, color: "rgba(13,28,45,0.6)", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-        {JSON.stringify(section, null, 2)}
-      </pre>
-    </div>
-  );
+  return null;
 }
 
 function QuizCard({ quiz, index, onChange }: {

@@ -281,10 +281,41 @@ export async function analyzeObs(r2Key: string): Promise<AnalyzeResult> {
     await delay(2000);
     return {
       sections: [
-        { type: "intro", text: "오늘 본문은 요나 4장입니다. 하나님께서 니느웨를 용서하신 후 요나의 반응을 살펴봅니다." },
-        { type: "point", title: "첫 번째 포인트", reference: "요나 4:1-4", answer: "요나는 하나님의 긍휼에 분노했습니다." },
-        { type: "point", title: "두 번째 포인트", reference: "요나 4:5-8" },
-        { type: "application", text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?" },
+        {
+          type: "intro" as const,
+          text: "오늘 본문은 요나 4장입니다. 하나님께서 니느웨를 용서하신 후 요나의 반응을 살펴봅니다.",
+          items: [
+            { role: "QUESTION" as const, level: 1, text: "요나는 왜 하나님의 결정에 분노했을까요?" },
+            { role: "ANSWER_DETAIL" as const, level: 2, text: "요나 4:1-3을 함께 읽어보세요." },
+          ],
+        },
+        {
+          type: "point" as const,
+          number: 1,
+          title: "( )은 자격 없는 자에게도 임합니다.",
+          answer: "하나님의 긍휼",
+          reference: "요나 4:1-4",
+          items: [
+            { role: "QUESTION" as const, level: 1, text: "요나의 분노에서 우리는 어떤 모습을 발견하나요?" },
+            { role: "SUB_QUESTION" as const, level: 2, text: "내 삶에서 비슷한 경험이 있었나요?" },
+          ],
+        },
+        {
+          type: "point" as const,
+          number: 2,
+          title: "하나님은 ( )을 통해 요나를 가르치십니다.",
+          answer: "박넝쿨",
+          reference: "요나 4:5-8",
+          items: [
+            { role: "QUESTION" as const, level: 1, text: "하나님이 박넝쿨을 허락하고 거두신 이유는 무엇일까요?" },
+          ],
+        },
+        {
+          type: "application" as const,
+          items: [
+            { role: "QUESTION" as const, level: 1, text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?" },
+          ],
+        },
       ],
       summary: [
         "요나는 니느웨를 향한 하나님의 긍휼에 분노하며 자신의 의를 내세웠습니다.",
