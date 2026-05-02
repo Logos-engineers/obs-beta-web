@@ -34,15 +34,26 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         const questions: string[] = [];
 
         if (appSection) {
-          if (appSection.questions && Array.isArray(appSection.questions)) {
-            // New format: array of objects
+          // 1. items (Current format: role-based items array)
+          if (appSection.items && Array.isArray(appSection.items)) {
+            appSection.items.forEach((item: any) => {
+              if (item.role === "QUESTION") {
+                const text = item.text || "";
+                const cleaned = text.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
+                if (cleaned) questions.push(cleaned);
+              }
+            });
+          }
+          // 2. questions (Legacy format)
+          else if (appSection.questions && Array.isArray(appSection.questions)) {
             appSection.questions.forEach((q: any) => {
               const text = (typeof q === 'string' ? q : q.text) || "";
               const cleaned = text.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
               if (cleaned) questions.push(cleaned);
             });
-          } else if (appSection.text) {
-            // Old format: newline separated string
+          } 
+          // 3. text (Legacy fallback)
+          else if (appSection.text) {
             const lines = (appSection.text as string)
               .split("\n")
               .filter((t) => t.trim().length > 0);

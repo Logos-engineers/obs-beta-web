@@ -34,6 +34,7 @@ interface LegacyQuestionItem {
 }
 
 interface QuestionCard {
+  titlePrefix: string;
   title: string;
   subItems: SubItem[];
   reference?: string;
@@ -49,6 +50,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
   const router = useRouter();
   const [passage, setPassage] = useState("");
   const [introText, setIntroText] = useState("");
+  const [introItems, setIntroItems] = useState<ObsItem[]>([]);
   const [questionCards, setQuestionCards] = useState<QuestionCard[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
@@ -81,12 +83,16 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
     }));
   };
 
+  const cleanText = (raw: string) =>
+    raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
+
   useEffect(() => {
     let active = true;
 
     fetchObsContent(contentId)
       .then((data) => {
         if (!active) return;
+        console.log("DEBUG: OBS Content Data:", data);
 
         // reviewId 저장 + 기존 summaryAnswers 복원
         if (data.reviewId) {
@@ -121,32 +127,31 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
         };
 
-        const cleanText = (raw: string) =>
-          raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
-
-        // 1. Intro -> "핵심 요약"
+        // 1. Intro -> "말씀 정리하기" 텍스트 처리 + "핵심 내용" 카드 생성
         const introSection = sections.find((s: any) => s.type === "intro") as any;
         if (introSection) {
           setIntroText(introSection.text || "");
-
-          const introItems = getItems(introSection).filter((i) => i.role !== 'NOTE');
-          if (introItems.length > 0) {
-            let questionCounter = 0;
-            let subCounter = 0;
-            const subItems: SubItem[] = introItems.map((item, idx) => {
-              let count = "";
-              if (item.level === 1) { questionCounter++; subCounter = 0; count = questionCounter.toString(); }
-              else { subCounter++; count = String.fromCharCode(96 + subCounter); }
-              return {
-                count,
+          
+          const items = getItems(introSection).filter((i: any) => i.role !== 'NOTE');
+          if (items.length > 0) {
+            const introSubItems: SubItem[] = [];
+            items.forEach((item, idx) => {
+              introSubItems.push({
+                count: (idx + 1).toString(),
                 text: cleanText(item.text),
                 upperLine: idx > 0,
-                lowerLine: idx < introItems.length - 1,
+                lowerLine: idx < items.length - 1,
                 level: item.level,
                 role: item.role,
-              };
+              });
             });
-            newQuestionCards.push({ title: "핵심 요약", subItems, reference: data.biblePassage });
+            
+            newQuestionCards.push({
+              titlePrefix: "전체 흐름",
+              title: "핵심 내용",
+              subItems: introSubItems,
+              reference: data.biblePassage
+            });
           }
         }
 
@@ -154,17 +159,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         const pointSections = sections.filter((s: any) => s.type === "point");
         pointSections.forEach((s: any, pointIdx: number) => {
           const subItems: SubItem[] = [];
-          const pointItems = getItems(s).filter((i) => i.role !== 'NOTE');
-
-          subItems.push({
-            count: s.number.toString(),
-            text: s.title.replace(/^[0-9.)①-⑨a-z\-\s•▶]+/, "").trim(),
-            answer: s.answer,
-            upperLine: false,
-            lowerLine: pointItems.length > 0,
-            level: 0,
-            role: 'QUESTION',
-          });
+          const pointItems = getItems(s).filter((i: any) => i.role !== 'NOTE');
 
           let level1Counter = 0;
           let level2Counter = 0;
@@ -186,7 +181,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
             subItems.push({
               count,
               text: cleanText(item.text),
-              upperLine: true,
+              upperLine: idx > 0,
               lowerLine: idx < pointItems.length - 1,
               level: item.level,
               role: item.role,
@@ -194,8 +189,15 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
 
           const qNum = pointIdx + 1;
-          const cardTitle = qNum === 1 ? "첫번째 질문" : qNum === 2 ? "두번째 질문" : qNum === 3 ? "세번째 질문" : `${qNum}번째 질문`;
-          newQuestionCards.push({ title: cardTitle, subItems, reference: s.reference || data.biblePassage });
+          // 전략 A: 포인트 제목(요약 문구)을 카드 타이틀로 일관되게 사용
+          const displayTitle = s.title.replace("( )", s.answer || "( )").trim();
+          
+          newQuestionCards.push({ 
+            titlePrefix: `${qNum}번째 질문`,
+            title: displayTitle, 
+            subItems, 
+            reference: s.reference || data.biblePassage 
+          });
         });
         setQuestionCards(newQuestionCards);
         
@@ -308,13 +310,18 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                 <div 
                   className="obs-reader-card-header" 
                   onClick={() => toggleCard(idx)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', alignItems: 'flex-start' }}
                 >
-                  <div className="obs-sq-q-badge">Q</div>
-                  <div className="obs-reader-card-title-col">
-                    <span className="obs-reader-card-title">{card.title}</span>
+                  <div className="obs-sq-q-badge" style={{ marginTop: '2px' }}>Q</div>
+                  <div className="obs-reader-card-title-col" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>
+                      {card.titlePrefix}
+                    </span>
+                    <span className="obs-reader-card-title" style={{ fontSize: '18px', lineHeight: '1.4' }}>
+                      {card.title}
+                    </span>
                   </div>
-                  <div className={`obs-reader-card-chevron ${isExpanded ? 'expanded' : ''}`}>
+                  <div className={`obs-reader-card-chevron ${isExpanded ? 'expanded' : ''}`} style={{ marginTop: '4px' }}>
                     <Image alt="" height={24} src="/icons/chevron_down.svg" width={24} />
                   </div>
                 </div>
