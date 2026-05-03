@@ -198,29 +198,6 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
         });
 
-        // 3. Application -> "삶으로 응답하기" 카드 생성
-        const appSection = sections.find((s: any) => s.type === "application") as any;
-        if (appSection) {
-          const appItems = getItems(appSection).filter((i: any) => i.role !== 'NOTE');
-          if (appItems.length > 0) {
-            const appSubItems: SubItem[] = appItems.map((item, idx) => ({
-              count: (idx + 1).toString(),
-              text: cleanText(item.text),
-              upperLine: idx > 0,
-              lowerLine: idx < appItems.length - 1,
-              level: item.level,
-              role: item.role,
-            }));
-
-            newQuestionCards.push({
-              titlePrefix: "적용 질문",
-              title: "삶으로 응답하기",
-              subItems: appSubItems,
-              reference: data.biblePassage
-            });
-          }
-        }
-
         setQuestionCards(newQuestionCards);
         
         // Expand all by default initially
