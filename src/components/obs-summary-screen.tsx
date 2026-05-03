@@ -126,36 +126,35 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
         };
 
-        // 1. Intro -> "말씀 정리하기" 텍스트 처리 + "핵심 내용" 카드 생성
+        // 1. Intro -> "말씀 정리하기" 텍스트만 처리
         const introSection = sections.find((s: any) => s.type === "intro") as any;
         if (introSection) {
           setIntroText(introSection.text || "");
-          
-          const items = getItems(introSection).filter((i: any) => i.role !== 'NOTE');
-          if (items.length > 0) {
-            const introSubItems: SubItem[] = [];
-            items.forEach((item, idx) => {
-              introSubItems.push({
-                count: (idx + 1).toString(),
-                text: cleanText(item.text),
-                upperLine: idx > 0,
-                lowerLine: idx < items.length - 1,
-                level: item.level,
-                role: item.role,
-              });
-            });
-            
-            newQuestionCards.push({
-              titlePrefix: "전체 흐름",
-              title: "핵심 내용",
-              subItems: introSubItems,
-              reference: data.biblePassage
-            });
-          }
         }
 
-        // 2. Points -> "첫번째 질문, 두번째 질문..."
+        // 2. Points 처리 및 "핵심 내용(요약)" 카드 생성
         const pointSections = sections.filter((s: any) => s.type === "point");
+        
+        // 모든 포인트의 제목을 모아서 요약 리스트 생성
+        if (pointSections.length > 0) {
+          const summarySubItems: SubItem[] = pointSections.map((s: any, idx: number) => ({
+            count: (idx + 1).toString(),
+            text: s.title.replace("( )", s.answer || "( )").trim(),
+            upperLine: idx > 0,
+            lowerLine: idx < pointSections.length - 1,
+            level: 1,
+            role: 'QUESTION',
+          }));
+
+          newQuestionCards.push({
+            titlePrefix: "전체 흐름",
+            title: "핵심 내용",
+            subItems: summarySubItems,
+            reference: data.biblePassage
+          });
+        }
+
+        // 개별 상세 포인트 카드 생성
         pointSections.forEach((s: any, pointIdx: number) => {
           const subItems: SubItem[] = [];
           const pointItems = getItems(s).filter((i: any) => i.role !== 'NOTE');
@@ -187,7 +186,7 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
           });
 
           const qNum = pointIdx + 1;
-          // 전략 A: 포인트 제목(요약 문구)을 카드 타이틀로 일관되게 사용
+          // 포인트 제목을 카드 타이틀로 사용
           const displayTitle = s.title.replace("( )", s.answer || "( )").trim();
           
           newQuestionCards.push({ 
