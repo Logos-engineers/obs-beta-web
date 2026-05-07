@@ -433,3 +433,14 @@ export async function publishObsContent(id: number, isPublished: boolean): Promi
     body: JSON.stringify({ isPublished }),
   });
 }
+
+export async function deleteObsContent(id: number): Promise<void> {
+  if (USE_MOCKS) {
+    await delay(300);
+    return;
+  }
+
+  await apiRequest<void>(`/admin/obs/contents/${id}`, {
+    method: "DELETE",
+  });
+}

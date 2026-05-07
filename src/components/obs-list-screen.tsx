@@ -14,8 +14,8 @@ import {
   isSameCalendarDate,
   sortObsContents,
 } from "@/lib/obs-ui";
-import { fetchObsContent, fetchObsContents, toggleObsReviewScrap } from "@/lib/api";
-import { clearSession } from "@/lib/session";
+import { deleteObsContent, fetchObsContent, fetchObsContents, toggleObsReviewScrap } from "@/lib/api";
+import { clearSession, isAdmin } from "@/lib/session";
 import type { ObsContentSummary } from "@/types/obs";
 
 function generateCalendarDays(currentMonth: Date) {
@@ -56,18 +56,25 @@ function ObsCard({
   item,
   isLatest,
   scrapOnly,
+  isAdminUser,
   processing,
+  deleting,
+  onDelete,
   onUnscrap,
 }: {
   item: ObsContentSummary;
   isLatest: boolean;
   scrapOnly: boolean;
+  isAdminUser: boolean;
   processing: boolean;
+  deleting: boolean;
+  onDelete: (contentId: number) => void;
   onUnscrap: (contentId: number) => void;
 }) {
   const reviewLabel = getReviewStatusLabel(item.reviewStatus, item.reviewCount);
   const actionHref = scrapOnly ? buildReviewResultHref(item) : buildReviewIntroHref(item);
   const actionLabel = scrapOnly ? "아카이빙한 OBS 보기" : "복습하기";
+  const showDeleteButton = isAdminUser && !scrapOnly;
 
   return (
     <div className="obs-card-wrapper">
@@ -87,7 +94,7 @@ function ObsCard({
           </Link>
           <p className="obs-card-verse">{item.biblePassage}</p>
         </div>
-        <div className={`obs-card-button-container ${scrapOnly ? "is-double" : ""}`}>
+        <div className={`obs-card-button-container ${scrapOnly || showDeleteButton ? "is-double" : ""}`}>
           <Link
             className={isLatest ? "obs-button-solid" : "obs-button-outline"}
             href={actionHref}
@@ -102,6 +109,16 @@ function ObsCard({
               type="button"
             >
               {processing ? "해제 중..." : "아카이브 해제"}
+            </button>
+          ) : null}
+          {showDeleteButton ? (
+            <button
+              className="obs-button-outline"
+              disabled={deleting}
+              onClick={() => onDelete(item.id)}
+              type="button"
+            >
+              {deleting ? "삭제 중..." : "삭제"}
             </button>
           ) : null}
         </div>
@@ -120,10 +137,16 @@ export function ObsListScreen({ scrapOnly = false }: { scrapOnly?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [adminUser, setAdminUser] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+
+  useEffect(() => {
+    setAdminUser(isAdmin());
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -241,6 +264,26 @@ export function ObsListScreen({ scrapOnly = false }: { scrapOnly?: boolean }) {
     }
   };
 
+  const handleDelete = async (contentId: number) => {
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm("이 OBS를 삭제하면 퀴즈와 복습 기록도 함께 삭제됩니다. 계속할까요?");
+      if (!confirmed) return;
+    }
+
+    try {
+      setDeletingId(contentId);
+      setError("");
+      await deleteObsContent(contentId);
+      setContents((prev) => prev.filter((item) => item.id !== contentId));
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error ? actionError.message : "OBS 삭제에 실패했습니다.";
+      setError(message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <main className="screen obs-screen">
       <div className="obs-back-bar">
@@ -311,7 +354,10 @@ export function ObsListScreen({ scrapOnly = false }: { scrapOnly?: boolean }) {
             <ObsCard
               item={item}
               isLatest={item.id === latestContentId}
+              isAdminUser={adminUser}
               key={item.id}
+              deleting={deletingId === item.id}
+              onDelete={handleDelete}
               onUnscrap={handleUnscrap}
               processing={processingId === item.id}
               scrapOnly={scrapOnly}
