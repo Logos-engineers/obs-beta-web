@@ -18,10 +18,6 @@ function fillBlank(text: string, answer?: unknown): string {
   return answerText ? text.replace("( )", `(${answerText})`) : text;
 }
 
-function isQuestionLike(text: string): boolean {
-  return /[?？]$/.test(text) || text.endsWith("까요") || text.endsWith("까요?");
-}
-
 function extractFlatItems(section: RawRecord): FlatItem[] {
   const items = Array.isArray(section.items) ? section.items : null;
 
@@ -122,12 +118,6 @@ function buildTree(flatItems: FlatItem[]): ObsTreeNode[] {
   return roots;
 }
 
-function extractIntroPrompts(section: RawRecord): string[] {
-  return extractFlatItems(section)
-    .map((item) => fillBlank(item.text, item.answer))
-    .filter(Boolean);
-}
-
 function normalizeApplication(section: RawRecord): ObsSection {
   const existingItems = Array.isArray(section.items) ? section.items : [];
   const normalizedItems =
@@ -145,8 +135,6 @@ function normalizeApplication(section: RawRecord): ObsSection {
 export function normalizeObsSections(rawSections: unknown): ObsSection[] {
   const source = Array.isArray(rawSections) ? rawSections : [];
   const normalized: ObsSection[] = [];
-  const introPrompts: string[] = [];
-  let pendingPoint: Extract<ObsSection, { type: "point" }> | null = null;
 
   source.forEach((section) => {
     if (!section || typeof section !== "object") return;
@@ -154,7 +142,6 @@ export function normalizeObsSections(rawSections: unknown): ObsSection[] {
     const type = asText(record.type);
 
     if (type === "intro") {
-      introPrompts.push(...extractIntroPrompts(record));
       normalized.push({
         type: "intro",
         text: asText(record.text),
@@ -175,41 +162,14 @@ export function normalizeObsSections(rawSections: unknown): ObsSection[] {
         ? (record.items as ObsTreeNode[])
         : buildTree(extractFlatItems(record));
 
-    if (isQuestionLike(title)) {
-      pendingPoint = {
-        type: "point",
-        number: normalized.filter((s) => s.type === "point").length + 1,
-        title,
-        answer,
-        reference: asText(record.reference),
-        items,
-      };
-      normalized.push(pendingPoint);
-      return;
-    }
-
-    const child: ObsTreeNode = {
-      number: "",
-      text: title,
+    normalized.push({
+      type: "point",
+      number: normalized.filter((s) => s.type === "point").length + 1,
+      title,
       answer,
-      reference: asText(record.reference) || null,
-      children: items,
-      notes: [],
-    };
-
-    if (!pendingPoint) {
-      pendingPoint = {
-        type: "point",
-        number: normalized.filter((s) => s.type === "point").length + 1,
-        title: introPrompts.shift() || title,
-        answer: null,
-        reference: "",
-        items: [],
-      };
-      normalized.push(pendingPoint);
-    }
-
-    pendingPoint.items.push(child);
+      reference: asText(record.reference),
+      items,
+    });
   });
 
   source.forEach((section) => {
