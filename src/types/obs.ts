@@ -56,19 +56,19 @@ export interface SessionUser {
   role: string;  // "USER" | "ADMIN"
 }
 
-// Role-based item (v2 schema)
-export type ObsItemRole = 'QUESTION' | 'SUB_QUESTION' | 'ANSWER_DETAIL' | 'NOTE';
-
-export interface ObsItem {
-  role: ObsItemRole;
-  level: number;
+export interface ObsTreeNode {
+  number: string;
   text: string;
+  answer?: string | null;
+  reference?: string | null;
+  numbered?: boolean;
+  children: ObsTreeNode[];
+  notes: string[];
 }
 
 export interface ObsSectionIntro {
   type: 'intro';
   text: string;
-  items: ObsItem[];
 }
 
 export interface ObsSectionPoint {
@@ -77,12 +77,12 @@ export interface ObsSectionPoint {
   title: string;
   answer: string | null;
   reference: string;
-  items: ObsItem[];
+  items: ObsTreeNode[];
 }
 
 export interface ObsSectionApplication {
   type: 'application';
-  items: ObsItem[];
+  items: ObsTreeNode[];
 }
 
 export type ObsSection = ObsSectionIntro | ObsSectionPoint | ObsSectionApplication;

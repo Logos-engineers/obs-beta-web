@@ -1,4 +1,5 @@
 import { readSession, clearSession } from "@/lib/session";
+import { normalizeObsSections } from "@/lib/obs-normalize";
 import type {
   AnalyzeResult,
   CreateContentRequest,
@@ -151,9 +152,13 @@ export async function fetchObsContent(id: number) {
   if (USE_MOCKS) {
     await delay(400);
     const mock = MOCK_OBS_CONTENTS.find(c => c.id === id) || MOCK_OBS_CONTENTS[0];
-    return { ...MOCK_OBS_DETAIL, ...mock, id };
+    return { ...MOCK_OBS_DETAIL, ...mock, id, sections: normalizeObsSections(MOCK_OBS_DETAIL.sections) };
   }
-  return apiRequest<ObsContentDetail>(`/obs/contents/${id}`);
+  const data = await apiRequest<ObsContentDetail>(`/obs/contents/${id}`);
+  return {
+    ...data,
+    sections: normalizeObsSections(data.sections),
+  };
 }
 
 export async function fetchObsQuizzes(id: number) {
@@ -279,41 +284,70 @@ export async function uploadObsPdf(file: File): Promise<{ r2Key: string }> {
 export async function analyzeObs(r2Key: string): Promise<AnalyzeResult> {
   if (USE_MOCKS) {
     await delay(2000);
-    return {
+    const mockResult = {
       sections: [
         {
           type: "intro" as const,
           text: "오늘 본문은 요나 4장입니다. 하나님께서 니느웨를 용서하신 후 요나의 반응을 살펴봅니다.",
-          items: [
-            { role: "QUESTION" as const, level: 1, text: "요나는 왜 하나님의 결정에 분노했을까요?" },
-            { role: "ANSWER_DETAIL" as const, level: 2, text: "요나 4:1-3을 함께 읽어보세요." },
-          ],
         },
         {
           type: "point" as const,
           number: 1,
-          title: "( )은 자격 없는 자에게도 임합니다.",
-          answer: "하나님의 긍휼",
+          title: "요나는 왜 하나님의 결정에 분노했을까요?",
+          answer: null,
           reference: "요나 4:1-4",
           items: [
-            { role: "QUESTION" as const, level: 1, text: "요나의 분노에서 우리는 어떤 모습을 발견하나요?" },
-            { role: "SUB_QUESTION" as const, level: 2, text: "내 삶에서 비슷한 경험이 있었나요?" },
+            {
+              number: "(1)",
+              text: "하나님의 긍휼은 자격 없는 자에게도 임합니다.",
+              answer: null,
+              children: [
+                {
+                  number: "1)",
+                  text: "요나의 분노에서 우리는 어떤 모습을 발견하나요?",
+                  answer: null,
+                  children: [],
+                  notes: [],
+                },
+              ],
+              notes: [],
+            },
           ],
         },
         {
           type: "point" as const,
           number: 2,
-          title: "하나님은 ( )을 통해 요나를 가르치십니다.",
-          answer: "박넝쿨",
+          title: "하나님은 요나를 어떻게 가르치십니까?",
+          answer: null,
           reference: "요나 4:5-8",
           items: [
-            { role: "QUESTION" as const, level: 1, text: "하나님이 박넝쿨을 허락하고 거두신 이유는 무엇일까요?" },
+            {
+              number: "(1)",
+              text: "하나님은 박넝쿨을 통해 요나를 가르치십니다.",
+              answer: "박넝쿨",
+              children: [
+                {
+                  number: "1)",
+                  text: "하나님이 박넝쿨을 허락하고 거두신 이유는 무엇일까요?",
+                  answer: null,
+                  children: [],
+                  notes: [],
+                },
+              ],
+              notes: [],
+            },
           ],
         },
         {
           type: "application" as const,
           items: [
-            { role: "QUESTION" as const, level: 1, text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?" },
+            {
+              number: "1.",
+              text: "나는 하나님의 은혜를 받을 자격이 없다고 생각하는 사람을 어떻게 바라보고 있는가?",
+              answer: null,
+              children: [],
+              notes: [],
+            },
           ],
         },
       ],
@@ -328,16 +362,25 @@ export async function analyzeObs(r2Key: string): Promise<AnalyzeResult> {
         { id: 0, stepNumber: 3, questionType: "ESSAY", questionText: "요나서를 통해 알 수 있는 하나님의 마음은 무엇인가요?", correctAnswer: null, explanation: null },
       ],
     };
+    return {
+      ...mockResult,
+      sections: normalizeObsSections(mockResult.sections),
+    };
   }
 
-  return apiRequest<AnalyzeResult>("/admin/obs/analyze", {
+  const data = await apiRequest<AnalyzeResult>("/admin/obs/analyze", {
     method: "POST",
     body: JSON.stringify({ r2Key }),
   });
+  return {
+    ...data,
+    sections: normalizeObsSections(data.sections),
+  };
 }
 
 // 교안 저장
 export async function createObsContent(data: CreateContentRequest): Promise<ObsContentDetail> {
+  const normalizedSections = normalizeObsSections(data.sections);
   if (USE_MOCKS) {
     await delay(800);
     return {
@@ -348,16 +391,23 @@ export async function createObsContent(data: CreateContentRequest): Promise<ObsC
       reviewStatus: null,
       isScraped: false,
       reviewCount: 0,
-      sections: data.sections,
+      sections: normalizedSections,
       isPublished: false,
       reviewId: null,
     };
   }
 
-  return apiRequest<ObsContentDetail>("/admin/obs/contents", {
+  const saved = await apiRequest<ObsContentDetail>("/admin/obs/contents", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      sections: normalizedSections,
+    }),
   });
+  return {
+    ...saved,
+    sections: normalizeObsSections(saved.sections),
+  };
 }
 
 // 발행 상태 변경

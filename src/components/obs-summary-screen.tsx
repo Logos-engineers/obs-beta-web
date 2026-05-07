@@ -6,44 +6,35 @@ import { useRouter } from "next/navigation";
 import { fetchObsContent, startObsReview, saveObsSummaryAnswers } from "@/lib/api";
 import { getVerses, type BibleVerse } from "@/lib/bibleLoader";
 import { parseCompactRef } from "@/lib/bibleParser";
-
-type ObsItemRole = 'QUESTION' | 'SUB_QUESTION' | 'ANSWER_DETAIL' | 'NOTE';
+import type { ObsTreeNode } from "@/types/obs";
 
 interface SubItem {
   count: string;
   text: string;
-  answer?: string;
-  upperLine: boolean;
-  lowerLine: boolean;
   level: number;
-  role: ObsItemRole;
-}
-
-
-// v2 schema
-interface ObsItem {
-  role: ObsItemRole;
-  level: number;
-  text: string;
-}
-
-// v1 legacy (questions array without role)
-interface LegacyQuestionItem {
-  text: string;
-  level: number;
+  answer?: string | null;
+  reference?: string | null;
+  isNote?: boolean;
 }
 
 interface QuestionCard {
   titlePrefix: string;
-  title: string;
   subItems: SubItem[];
   reference?: string;
 }
 
-interface SummaryPoint {
-  number?: number;
-  text: string;
-  answer?: string;
+function getIndentByLevel(level: number): number {
+  if (level <= 0) return 0;
+  if (level === 1) return 14;
+  if (level === 2) return 28;
+  if (level === 3) return 42;
+  if (level === 4) return 58;
+  return 74;
+}
+
+function getTextStartOffset(level: number): number {
+  const parentLevel = Math.max(level - 1, 0);
+  return 16 + getIndentByLevel(parentLevel) + 44;
 }
 
 export function ObsSummaryScreen({ contentId }: { contentId: number }) {
@@ -82,8 +73,34 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
     }));
   };
 
-  const cleanText = (raw: string) =>
-    raw.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶◦]\s*)/, "").trim();
+  const toOrdinalLabel = (num: number) => {
+    const labels = ["", "첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열"];
+    return labels[num] ? `${labels[num]}번째 질문` : `${num}번째 질문`;
+  };
+
+  const fillBlank = (text: string, answer?: string | null) => {
+    if (!text) return "";
+    if (answer) return text.replace("( )", `(${answer})`);
+    return text;
+  };
+
+  const flattenTree = (nodes: ObsTreeNode[], depth = 1): SubItem[] => {
+    const rows: SubItem[] = [];
+
+    nodes.forEach((node) => {
+      rows.push({
+        count: node.number,
+        text: fillBlank(node.text, node.answer),
+        level: depth,
+        answer: node.answer,
+        reference: node.reference,
+      });
+
+      rows.push(...flattenTree(node.children, depth + 1));
+    });
+
+    return rows;
+  };
 
   useEffect(() => {
     let active = true;
@@ -109,89 +126,31 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
         const sections = data.sections || [];
         const newQuestionCards: QuestionCard[] = [];
 
-        // v2: items 배열 사용. v1 legacy: questions 배열 폴백
-        const getItems = (section: any): ObsItem[] => {
-          if (section.items && Array.isArray(section.items)) {
-            return section.items as ObsItem[];
-          }
-          // legacy v1: questions 배열 → role 추론 (level 1이면 QUESTION, 아니면 ANSWER_DETAIL)
-          const qs: (string | LegacyQuestionItem)[] = section.questions || [];
-          return qs.map((q) => {
-            const isObj = typeof q !== 'string';
-            return {
-              role: 'QUESTION' as ObsItemRole,
-              level: isObj ? q.level : 1,
-              text: isObj ? q.text : q,
-            };
-          });
-        };
-
         // 1. Intro -> "말씀 정리하기" 텍스트만 처리
         const introSection = sections.find((s: any) => s.type === "intro") as any;
         if (introSection) {
           setIntroText(introSection.text || "");
         }
 
-        // 2. Points 처리 및 "핵심 내용(요약)" 카드 생성
+        // 2. Points 처리
         const pointSections = sections.filter((s: any) => s.type === "point");
-        
-        // 모든 포인트의 제목을 모아서 요약 리스트 생성
-        if (pointSections.length > 0) {
-          const summarySubItems: SubItem[] = pointSections.map((s: any, idx: number) => ({
-            count: (idx + 1).toString(),
-            text: s.title.replace("( )", s.answer || "( )").trim(),
-            upperLine: idx > 0,
-            lowerLine: idx < pointSections.length - 1,
-            level: 1,
-            role: 'QUESTION',
-          }));
-
-          newQuestionCards.push({
-            titlePrefix: "전체 흐름",
-            title: "핵심 내용",
-            subItems: summarySubItems,
-            reference: data.biblePassage
-          });
-        }
 
         // 개별 상세 포인트 카드 생성
         pointSections.forEach((s: any, pointIdx: number) => {
-          const subItems: SubItem[] = [];
-          const pointItems = getItems(s).filter((i: any) => i.role !== 'NOTE');
-
-          let level1Counter = 0;
-          let level2Counter = 0;
-          let level3Counter = 0;
-
-          pointItems.forEach((item, idx) => {
-            let count = "";
-            if (item.level === 1) {
-              level1Counter++; level2Counter = 0; level3Counter = 0;
-              count = `(${level1Counter})`;
-            } else if (item.level === 2) {
-              level2Counter++; level3Counter = 0;
-              count = `${level2Counter})`;
-            } else {
-              level3Counter++;
-              count = String.fromCharCode(96 + level3Counter); // a, b, c...
-            }
-            subItems.push({
-              count,
-              text: cleanText(item.text),
-              upperLine: idx > 0,
-              lowerLine: idx < pointItems.length - 1,
-              level: item.level,
-              role: item.role,
-            });
-          });
-
           const qNum = pointIdx + 1;
-          // 포인트 제목을 카드 타이틀로 사용
-          const displayTitle = s.title.replace("( )", s.answer || "( )").trim();
+          const displayTitle = fillBlank(s.title, s.answer);
+          const childItems = Array.isArray(s.items) ? flattenTree(s.items as ObsTreeNode[]) : [];
+
+          const subItems: SubItem[] = [{
+            count: String(qNum),
+            text: displayTitle,
+            level: 0,
+            answer: s.answer,
+            reference: s.reference,
+          }, ...childItems];
           
           newQuestionCards.push({ 
-            titlePrefix: `${qNum}번째 질문`,
-            title: displayTitle, 
+            titlePrefix: toOrdinalLabel(qNum),
             subItems, 
             reference: s.reference || data.biblePassage 
           });
@@ -312,11 +271,8 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                 >
                   <div className="obs-sq-q-badge" style={{ marginTop: '2px' }}>Q</div>
                   <div className="obs-reader-card-title-col" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>
+                    <span style={{ fontSize: '16px', color: 'rgba(13, 28, 45, 0.8)', fontWeight: 700, lineHeight: '1.6' }}>
                       {card.titlePrefix}
-                    </span>
-                    <span className="obs-reader-card-title" style={{ fontSize: '18px', lineHeight: '1.4' }}>
-                      {card.title}
                     </span>
                   </div>
                   <div className={`obs-reader-card-chevron ${isExpanded ? 'expanded' : ''}`} style={{ marginTop: '4px' }}>
@@ -331,8 +287,9 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                       <div className="obs-sq-list">
                         {card.subItems.map((sub, subIdx) => {
                           const IS_BIBLE_REF = /^[가-힣]{1,4}\d+[장:]/;
-                          const indent = sub.level === 2 ? 14 : sub.level >= 3 ? 28 : 0;
-                          const isNote = sub.role === 'NOTE';
+                          const indent = getIndentByLevel(sub.level);
+                          const isNote = sub.isNote;
+                          const isUnnumbered = !sub.count;
 
                           if (isNote) {
                             return (
@@ -353,38 +310,28 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                             );
                           }
 
-                          const badgeClass = [
-                            'obs-sq-badge',
-                            sub.level === 2 ? 'is-sub' : '',
-                            sub.level >= 3 ? 'is-deep-sub' : '',
-                            sub.role === 'ANSWER_DETAIL' ? 'is-detail' : '',
-                          ].filter(Boolean).join(' ');
-
                           const badgeStyle: React.CSSProperties = {
-                            background: sub.level === 1 ? 'rgba(101, 97, 255, 0.1)' : 
-                                       sub.level === 2 ? '#F2F4F7' : '#FFFFFF',
-                            color: sub.level === 1 ? 'var(--primary)' : '#667085',
-                            border: sub.level >= 3 ? '1px solid #E5E7EB' : 'none'
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: '#F2F4F7',
+                            color: 'rgba(13, 28, 45, 0.8)',
+                            border: 'none'
                           };
 
-                          return (
-                            <div
-                              key={subIdx}
-                              className="obs-sq-row"
-                              style={{ paddingLeft: `${16 + indent}px`, paddingRight: '16px' }}
-                            >
-                              <div className="obs-sq-badge-col">
-                                {sub.count ? (
-                                  <div className={badgeClass} style={badgeStyle}>
-                                    <span className="obs-sq-badge-text" style={{ color: badgeStyle.color }}>{sub.count}</span>
-                                  </div>
-                                ) : (
-                                  <div className="obs-sq-bullet" />
-                                )}
-                              </div>
-                              <div className="obs-sq-right">
+                          if (isUnnumbered) {
+                            return (
+                              <div
+                                key={subIdx}
+                                style={{
+                                  paddingLeft: `${getTextStartOffset(sub.level)}px`,
+                                  paddingRight: '16px',
+                                  paddingTop: '2px',
+                                  paddingBottom: '10px',
+                                }}
+                              >
                                 <p className="obs-sq-text">
-                                  {(sub.text || "").split("(").map((part, pIdx) => {
+                                  {(fillBlank(sub.text || "", sub.answer) || "").split("(").map((part, pIdx) => {
                                     if (pIdx === 0) return part;
                                     const closingIdx = part.indexOf(")");
                                     if (closingIdx === -1) return `(${part}`;
@@ -411,7 +358,68 @@ export function ObsSummaryScreen({ contentId }: { contentId: number }) {
                                     }
                                     return (
                                       <span key={pIdx}>
-                                        (<span className="obs-blank-word">{sub.answer || inside}</span>){after}
+                                        (<span className="obs-blank-word">{inside}</span>){after}
+                                      </span>
+                                    );
+                                  })}
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={subIdx}
+                              className="obs-sq-row"
+                              style={{
+                                paddingLeft: `${16 + indent}px`,
+                                paddingRight: '16px',
+                              }}
+                            >
+                              <div className="obs-sq-badge-col">
+                                <div className="obs-sq-badge" style={badgeStyle}>
+                                  <span
+                                    className="obs-sq-badge-text"
+                                    style={{
+                                      color: badgeStyle.color,
+                                      fontSize: '16px',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {sub.count}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="obs-sq-right">
+                                <p className="obs-sq-text">
+                                  {(fillBlank(sub.text || "", sub.answer) || "").split("(").map((part, pIdx) => {
+                                    if (pIdx === 0) return part;
+                                    const closingIdx = part.indexOf(")");
+                                    if (closingIdx === -1) return `(${part}`;
+                                    const inside = part.slice(0, closingIdx);
+                                    const after = part.slice(closingIdx + 1);
+                                    const trimmed = inside.trim();
+                                    if (IS_BIBLE_REF.test(trimmed)) {
+                                      const refParts = trimmed.split(/,\s*/);
+                                      return (
+                                        <span key={pIdx}>
+                                          ({refParts.map((refPart, rIdx) => {
+                                            const isRef = IS_BIBLE_REF.test(refPart.trim());
+                                            return (
+                                              <span key={rIdx}>
+                                                {rIdx > 0 && ', '}
+                                                {isRef ? (
+                                                  <button className="obs-bible-ref-btn" onClick={(e) => { e.stopPropagation(); handleBibleRefClick(refPart.trim()); }} type="button">{refPart.trim()}</button>
+                                                ) : <span>{refPart.trim()}</span>}
+                                              </span>
+                                            );
+                                          })}){after}
+                                        </span>
+                                      );
+                                    }
+                                    return (
+                                      <span key={pIdx}>
+                                        (<span className="obs-blank-word">{inside}</span>){after}
                                       </span>
                                     );
                                   })}

@@ -10,6 +10,7 @@ import {
   saveObsApplication,
 } from "@/lib/api";
 import { EMOTIONS } from "@/lib/mock-data";
+import type { ObsTreeNode } from "@/types/obs";
 
 export function ObsCompletionScreen({ contentId }: { contentId: number }) {
   const router = useRouter();
@@ -19,6 +20,18 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [applicationQuestions, setApplicationQuestions] = useState<string[]>([]);
+
+  const collectTreeQuestions = (nodes: ObsTreeNode[]): string[] => {
+    const questions: string[] = [];
+
+    nodes.forEach((node) => {
+      const text = (node.text || "").trim();
+      if (text) questions.push(text);
+      questions.push(...collectTreeQuestions(node.children || []));
+    });
+
+    return questions;
+  };
 
   useEffect(() => {
     let active = true;
@@ -34,15 +47,9 @@ export function ObsCompletionScreen({ contentId }: { contentId: number }) {
         const questions: string[] = [];
 
         if (appSection) {
-          // 1. items (Current format: role-based items array)
-          if (appSection.items && Array.isArray(appSection.items)) {
-            appSection.items.forEach((item: any) => {
-              if (item.role === "QUESTION") {
-                const text = item.text || "";
-                const cleaned = text.replace(/^(\d{1,2}[.)]\s*|[①-⑨]\s*|[a-z][.)]\s*|[-•▶]\s*)/, "").trim();
-                if (cleaned) questions.push(cleaned);
-              }
-            });
+          // 1. items (Current normalized tree format)
+          if (appSection.items && Array.isArray(appSection.items) && appSection.items.length > 0 && "children" in appSection.items[0]) {
+            questions.push(...collectTreeQuestions(appSection.items as ObsTreeNode[]));
           }
           // 2. questions (Legacy format)
           else if (appSection.questions && Array.isArray(appSection.questions)) {
